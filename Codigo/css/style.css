@@ -1,0 +1,208 @@
+/* Paleta de cores para tema escuro inspirado em UMatch/Tinder */
+:root {
+  --primary: linear-gradient(135deg, #ff3b3b, #ff8c42); /* Gradiente vermelho/laranja pokedex */
+  --primary-solid: #ff6f61;      /* Coral/Tinder Red */
+  --secondary: #23232b;          /* Fundo cards */
+  --accent: #ffb347;             /* Orange/Gold */
+  --background: #181820;         /* Fundo geral */
+  --card-bg: #23232b;
+  --text: #fff;
+  --muted: #b0b0b8;
+  --success: #4caf50;
+  --danger: #e53935;
+  --border-radius: 18px;
+  --shadow: 0 4px 16px rgba(0,0,0,0.32);
+  --transition: 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+header {
+  background: var(--primary);
+  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
+  color: #fff;
+  padding: 1.2rem 2rem;
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  font-weight: bold;
+  border-bottom-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color var(--transition);
+}
+nav ul li a:hover {
+  color: var(--accent);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2rem auto;
+  max-width: 400px;
+}
+
+.pet-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem 1rem 1rem 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  position: relative;
+  transition: box-shadow var(--transition), background var(--transition);
+  border: 1px solid #282834;
+}
+
+.pet-card:hover {
+  box-shadow: 0 8px 32px rgba(255,111,97,0.18);
+  background: #282834;
+}
+
+.pet-photo {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+  background: #222;
+  border: 2px solid #ff3b3b;
+}
+
+.pet-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.pet-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.pet-details {
+  color: #ff3b3b;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.pet-description {
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.2rem;
+  gap: 1.5rem;
+}
+
+/* ✅ Botões de ação redondos e centralizados */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), color var(--transition);
+  background: #23232b;
+  color: #ff3b3b;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  outline: none;
+  padding: 0;
+}
+
+.action-btn.like {
+  background: var(--success);
+  color: #fff;
+}
+
+.action-btn.dislike {
+  background: var(--danger);
+  color: #fff;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
+
+.match-banner {
+  background: var(--accent);
+  color: #23232b;
+  padding: 1rem 2rem;
+  border-radius: var(--border-radius);
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+  animation: pop 0.5s;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  80% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+footer {
+  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  margin-top: 2rem;
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+/* Responsivo */
+@media (max-width: 500px) {
+  .app-container {
+    max-width: 98vw;
+    margin: 1rem;
+  }
+  .pet-card {
+    padding: 1rem 0.5rem 0.5rem 0.5rem;
+  }
+  .pet-photo {
+    height: 220px;
+  }
+  header {
+    font-size: 1.3rem;
+    padding: 1rem 0.5rem;
+  }
+  .action-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.8rem;
+  }
+}

@@ -9,3 +9,5 @@ public enum NecessidadeExercicio {
     MEDIA,
     ALTA
 }
+
+// NAO PRECISA

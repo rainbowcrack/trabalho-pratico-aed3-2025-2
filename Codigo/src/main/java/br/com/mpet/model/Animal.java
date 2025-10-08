@@ -14,10 +14,20 @@ public abstract class Animal {
     char sexo; // 'M', 'F', 'U'
     Porte porte; // obrigatório
     HistoricoMedico historicoMedico; // nunca null; inicializado no create se vier null
+
+
+
+    // IMPORTANTE
+    // String descricao;
+    // inclui temperamento, historico de maus tratos e historia de vida
     Temperamento temperamento; // pode ser null até avaliação
     boolean sofreuMausTratos = false;
     String detalhesMausTratos; // opcional
     String historiaDeVida; // opcional (história para exibir)
+
+
+
+
     boolean ativo; // espelha tombstone (tombstone=1 => ativo=false)
 }
 

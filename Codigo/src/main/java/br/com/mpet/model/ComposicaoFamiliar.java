@@ -8,3 +8,5 @@ public enum ComposicaoFamiliar {
     CASAL_SEM_FILHOS,
     FAMILIA_COM_CRIANCAS
 }
+
+// INTERESSANTE

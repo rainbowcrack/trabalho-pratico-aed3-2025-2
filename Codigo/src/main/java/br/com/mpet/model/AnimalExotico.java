@@ -6,3 +6,5 @@ public class AnimalExotico extends Animal {
     private String necessidadesEspeciais; // Descreve requisitos ambientais e alimentares
 
 }
+
+// ISSO AQUI NAO PRECISA

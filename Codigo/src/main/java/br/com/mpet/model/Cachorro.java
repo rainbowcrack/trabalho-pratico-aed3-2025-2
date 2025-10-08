@@ -7,3 +7,5 @@ public class Cachorro extends Animal {
     boolean seDaBemComCachorros, seDaBemComGatos, seDaBemComCriancas;
     
 }
+
+// NAO PRECISA DE NECESSIDADE DE EXERCICIO, APENAS RACA E BOOLEAN E VACINA (DETALHE: PODE ESTAR EM FICHA MEDICA)

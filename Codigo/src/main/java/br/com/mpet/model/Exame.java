@@ -12,3 +12,5 @@ public class Exame {
     private String resultadoLivre; // texto do laudo
     private String observacoes;
 }
+
+// INTERESSANTE

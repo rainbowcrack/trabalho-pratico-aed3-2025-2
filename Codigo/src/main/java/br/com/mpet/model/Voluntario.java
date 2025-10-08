@@ -11,3 +11,5 @@ public class Voluntario {
 
     // Getters and Setters (a gerar futuramente)
 }
+
+// VOLUNTARIO PODE ADOTAR, LOGO SOFRE HERANÇA DE ADOTANTE

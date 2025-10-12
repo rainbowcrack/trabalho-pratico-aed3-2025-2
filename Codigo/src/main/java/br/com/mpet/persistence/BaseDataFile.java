@@ -15,6 +15,7 @@ public abstract class BaseDataFile implements Closeable {
     protected final RandomAccessFile raf;
     protected FileHeaderHelper.Header header;
     protected final byte versaoFormato;
+    protected volatile boolean closed = false;
 
     protected BaseDataFile(File file, byte versaoFormato) throws IOException {
         this.file = file;
@@ -69,7 +70,9 @@ public abstract class BaseDataFile implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
+        if (closed) return;
+        closed = true;
         raf.close();
     }
 }

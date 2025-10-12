@@ -159,10 +159,12 @@ public final class Codec {
     }
     // enum Role { ADMIN(0), USER(1), GUEST(2) }
     // Role e = Role.USER;
-    // (Byte ) e = 00000000 0000 0001
+    //obs: o 0 é o nullo pois pego o ordinal e somo 1. ao fazer isso garanto que o 0 nunca será um valor válido. E assim, posso usar o 0 como sentinela para null.
+    // (Byte ) e = (ordinal() = 1) + 1 = 2
     // (Byte) e;
-    // 0000 0000  0000 0001 | = 1
+    // 0000 0000  0000 0010 | = 2
     
+
 
     public static byte[] encodeLocalDate(LocalDate d) {
         if (d == null) return new byte[]{0};

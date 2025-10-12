@@ -56,6 +56,8 @@ public final class Codec {
             return new byte[]{0,1,' '};
         }
         if (data.length > 0xFFFF) throw new IllegalArgumentException("String excede 65535 bytes UTF-8: " + data.length);
+
+        //encodar length + dados
         int len = data.length; // 1..65535
         byte[] out = new byte[2 + len];
         out[0] = (byte)((len >> 8) & 0xFF);
@@ -63,6 +65,9 @@ public final class Codec {
         System.arraycopy(data, 0, out, 2, len);
         return out;
     }
+    // 0000 1011 0000 0110
+    // 0000 0000 0000 1011 = 1011
+    // 0000 1011 0000 0110 = 0110
 
 
     public static byte[] encodeTriBoolean(Boolean v) {
@@ -77,10 +82,28 @@ public final class Codec {
             (byte)(v & 0xFF)
         };
     }
+    // int v=11
+    //obs: Sendo o 0xFF é para garantir que o byte seja tratado como unsigned. E conseguimos o valor correto ao fazer o AND com 0xFF.
+    // Já o & 0xFF é para garantir que apenas os 8 bits menos significativos sejam considerados, eliminando qualquer bit extra que possa ter sido introduzido pela operação de deslocamento.
+    // (Byte ) v = 0000 0000 0000 0000 0000 0000 0000 1011
+    // (Byte) v>>24;
+    // 0000 0000 | 0000 0000 0000 0000 0000 1011 = 11
+    // (Byte) v>>16;
+    // 0000 0000  0000 0000 | 0000 0000 0000 1011 = 11
+    // (Byte) v>>8;
+    // 0000 0000  0000 0000  0000 0000 | 0000 1011 = 11
+    // (Byte) v;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
 
     public static byte[] encodeShort(short v) {
         return new byte[]{ (byte)((v>>8)&0xFF), (byte)(v & 0xFF)};
     }
+    // short v=11
+    // (Byte ) v = 0000 0000 0000 1011
+    // (Byte) v>>8;
+    // 0000 0000 | 0000 1011 = 11
+    // (Byte) v;
+    // 0000 0000  0000 1011 | = 11
 
     public static byte[] encodeLong(long v) {
         return new byte[]{
@@ -88,10 +111,43 @@ public final class Codec {
             (byte)((v>>24)&0xFF),(byte)((v>>16)&0xFF),(byte)((v>>8)&0xFF),(byte)(v & 0xFF)
         };
     }
+    // long v=11
+    // (Byte ) v = 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1011
+    // (Byte) v>>56;
+    // 0000 0000 | 0000 0000 0000 0000 0000 0000 0000 1011 = 11
+    // (Byte) v>>48;
+    // 0000 0000  0000 0000 | 0000 0000 0000 1011 = 11
+    // (Byte) v>>40;
+    // 0000 0000  0000 0000  0000 0000 | 0000 1011 = 11
+    // (Byte) v>>32;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
+    // (Byte) v>>24;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
+    // (Byte) v>>16;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
+    // (Byte) v>>8;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
+    // (Byte) v;
+    // 0000 0000  0000 0000  0000 0000  0000 1011 | = 11
+    
 
     public static byte[] encodeChar(char c) {
         return new byte[]{ (byte)((c>>8)&0xFF), (byte)(c & 0xFF) };
     }
+    // char c='A' = 65
+    // (Byte ) c = 0000 0000 0100 0001
+    // (Byte) c>>8;
+    // 0000 0000 | 0100 0001 = 65
+    // (Byte) c;
+    // 0000 0000  0100 0001 | = 65
+    // (Byte) c='あ' = 12354
+    // (Byte ) c = 0011 0000 0010 0010
+    // (Byte) c>>8;
+    // 0000 0000 | 0011 0000 = 48
+    // (Byte) c;
+    // 0000 0000  0011 0000 | = 48
+    
+
 
     public static <E extends Enum<E>> byte[] encodeEnum(E e) {
         if (e == null) return new byte[]{ 0 }; // 0 = null
@@ -101,6 +157,12 @@ public final class Codec {
         int stored = ord + 1; // 1..255
         return new byte[]{ (byte)(stored & 0xFF) };
     }
+    // enum Role { ADMIN(0), USER(1), GUEST(2) }
+    // Role e = Role.USER;
+    // (Byte ) e = 00000000 0000 0001
+    // (Byte) e;
+    // 0000 0000  0000 0001 | = 1
+    
 
     public static byte[] encodeLocalDate(LocalDate d) {
         if (d == null) return new byte[]{0};

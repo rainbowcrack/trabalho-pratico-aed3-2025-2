@@ -1,12 +1,17 @@
 -- script do banco de dados PetMatch
 
+-- Observação: atualizado para refletir o novo modelo base Usuario
+-- (campos comuns: cpf, telefone, ativo, senha quando aplicável)
+
 -- aabela de Adotantes
 CREATE TABLE IF NOT EXISTS Adotantes (
     idAdotante INT PRIMARY KEY,
-    cpf CHAR(11),
-    nome VARCHAR(100) NOT NULL, 
+    cpf CHAR(11) NOT NULL UNIQUE,
+    nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    ativo BOOLEAN DEFAULT TRUE,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -23,9 +28,12 @@ CREATE TABLE IF NOT EXISTS Ongs (
 -- tabela de Voluntarios
 CREATE TABLE IF NOT EXISTS Voluntarios (
     idVoluntario INT PRIMARY KEY,
-    cpf CHAR(11) NOT NULL,
+    cpf CHAR(11) NOT NULL UNIQUE,
     nome VARCHAR(100) NOT NULL,
     contato VARCHAR(100),
+    telefone VARCHAR(20),
+    senha VARCHAR(100) NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

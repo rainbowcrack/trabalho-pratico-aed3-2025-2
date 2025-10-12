@@ -2,12 +2,10 @@ package br.com.mpet.model;
 
 import java.time.LocalDate;
 
-public class Adotante {
+public class Adotante extends Usuario {
 
-    String cpf; // chave primária (natural)
     String nomeCompleto;
     LocalDate dataNascimento;
-    String telefone;
     TipoMoradia tipoMoradia;
     boolean possuiTelaProtetora;
     boolean possuiOutrosAnimais;
@@ -21,6 +19,5 @@ public class Adotante {
     String motivoAdocao; // renomeado (camelCase)
     boolean cientePossuiResponsavel;
     boolean cienteCustos;
-    boolean ativo; // espelha lápide
 
 }

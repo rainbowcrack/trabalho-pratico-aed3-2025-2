@@ -14,8 +14,8 @@ public abstract class Animal {
     char sexo; // 'M', 'F', 'U'
     Porte porte; // obrigatório
     HistoricoMedico historicoMedico; // nunca null; inicializado no create se vier null
-    String descricao;
-    // inclui temperamento, historico de maus tratos e historia de vida
+    String descricao; // Descrição livre, opcional
+
   
 
 

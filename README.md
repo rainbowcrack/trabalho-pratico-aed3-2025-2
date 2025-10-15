@@ -139,23 +139,83 @@ Estrutura relevante (backend):
 - O índice `.idx` é sincronizado a cada mutação; não editar arquivos manualmente.
 - A ordem dos campos no payload deve ser mantida para compatibilidade.
 
-## Tasks e prazos (atualizados em 12/10/2025)
+## Tasks e prazos (detalhado em 15/10/2025)
 
-Até Domingo 12/10
-- [ ] Terminar os CRUDs (ajustes finais em DAO/CLI)
-- [ ] Fazer scripts Bash e Makefile para testar no terminal
-- [ ] Fazer Deploy no terminal
-- [ ] Reunião de Alinhamento
+### Até Domingo, 12/10: Finalização dos CRUDs e Preparação do Ambiente
 
-Até Terça 14/10
-- [ ] Relacionamentos 1:N com Hash Extensível (offset)
+1.  **Terminar os CRUDs (DAO e CLI)**
+    *   **DAO para `Ong`:**
+        *   Criar a classe `OngDataFileDao` usando `AnimalDataFileDao` como base.
+        *   A chave primária será `Integer` (ID sequencial), gerenciada pelo cabeçalho do arquivo.
+        *   Implementar os métodos `encodeOng` e `decodeOng` para serializar/desserializar os campos da entidade `Ong`.
+        *   Adaptar os métodos `create`, `read`, `update` e `delete` para o contexto de `Ong`.
+    *   **DAO para `Adotante` e `Voluntario`:**
+        *   Criar as classes `AdotanteDataFileDao` e `VoluntarioDataFileDao`.
+        *   A chave primária será `String` (CPF). O `Map` de índice em memória e a Árvore B+ devem ser parametrizados para `String`.
+        *   O CPF será o primeiro campo do *payload*, não haverá um ID sequencial no cabeçalho do registro.
+        *   Implementar os métodos `encode/decode` para cada entidade.
+        *   Ajustar o método `rebuildIfEmpty` para ler o CPF do payload de cada registro ao reconstruir o índice.
+    *   **Integração na CLI (`Interface.java`):**
+        *   Adicionar novas opções no menu principal para gerenciar ONGs, Adotantes e Voluntários.
+        *   Para cada entidade, criar submenus com as opções de criar, ler, listar, editar e remover.
+        *   Conectar cada opção da CLI ao método correspondente no respectivo DAO.
 
-Até Quarta 15/10
-- [ ] Último teste
-- [ ] Completar a documentação
+2.  **Fazer Scripts Bash e Makefile para Testar no Terminal**
+    *   **`Makefile`:**
+        *   Criar um `Makefile` na raiz do projeto.
+        *   Adicionar um *target* `build` que executa `mvn -f Codigo/pom.xml package`.
+        *   Adicionar um *target* `run` que executa a CLI via `java -cp ... br.com.mpet.Interface`.
+        *   Adicionar um *target* `clean` que remove os diretórios `target/` e `dats/`.
+    *   **Script Bash (`scripts/run.sh`):**
+        *   Criar um script shell que automatiza a compilação e execução, facilitando testes rápidos em ambientes Linux/macOS.
 
-Até Quinta 16/10
-- [ ] Enviar
+3.  **Fazer "Deploy" no Terminal**
+    *   **Empacotamento (Uber-JAR):**
+        *   Configurar o `maven-shade-plugin` ou similar no `pom.xml` para gerar um JAR único e executável (`uber-jar`) que inclua todas as dependências.
+        *   Garantir que o `MANIFEST.MF` do JAR final aponte corretamente para a classe principal (`br.com.mpet.Interface`).
+    *   **Script de Deploy (`deploy.sh`):**
+        *   Criar um script que simula um deploy local:
+            1.  Executa o build do Maven para gerar o `uber-jar`.
+            2.  Cria um diretório `deploy/`.
+            3.  Copia o JAR gerado para dentro de `deploy/`.
+            4.  Gera um script `start.sh` dentro de `deploy/` com o comando `java -jar nome-do-app.jar` para facilitar a execução.
+
+### Até Terça, 14/10: Implementação de Relacionamentos
+
+1.  **Relacionamentos 1:N com Hash Extensível**
+    *   **Definição:** Implementar a relação **1 ONG -> N Animais**.
+    *   **Índice Secundário:**
+        *   Criar uma classe `HashIndex` que implementa a lógica de um índice baseado em Hash Extensível. Este índice mapeará uma chave (ex: `idOng`) a uma lista de *offsets* dos registros relacionados no arquivo `.dat`.
+        *   O estado do Hash (profundidade global, diretório, buckets) será persistido em um arquivo próprio (ex: `animais_ong.hidx`).
+    *   **Integração no `AnimalDataFileDao`:**
+        *   Instanciar o `HashIndex` para gerenciar o mapeamento `idOng -> offset do Animal`.
+        *   Nos métodos `create`, `update` (se o `idOng` mudar) e `delete` de `Animal`, atualizar o `HashIndex` para manter a consistência.
+        *   Implementar o método `listByOng(Integer idOng)` que utiliza o `HashIndex` para encontrar rapidamente todos os animais de uma ONG sem varrer o arquivo de dados principal.
+
+### Até Quarta, 15/10: Testes e Documentação
+
+1.  **Último Teste (Fluxo Completo)**
+    *   Executar um teste de ponta a ponta via CLI:
+        1.  Criar uma ONG.
+        2.  Criar múltiplos Animais associados a essa ONG.
+        3.  Listar os animais daquela ONG específica.
+        4.  Criar um Adotante.
+        5.  Editar os dados do Adotante e de um Animal.
+        6.  Remover um Animal.
+        7.  Executar o `vacuum` e verificar se os dados permanecem consistentes.
+        8.  Fazer backup e restore.
+
+2.  **Completar a Documentação**
+    *   Revisar todos os comentários Javadoc nas classes principais (DAOs, `Codec`, Índices), garantindo que a ordem dos campos e as regras de negócio estejam claras.
+    *   Atualizar o `README.md` com a descrição final da arquitetura, incluindo os novos DAOs e a implementação do relacionamento 1:N.
+    *   Adicionar uma seção sobre como usar os novos scripts (`Makefile`, `run.sh`, `deploy.sh`).
+
+### Até Quinta, 16/10: Entrega
+
+- [ ] **Enviar**
+    *   Verificar se todos os artefatos estão no repositório.
+    *   Criar uma tag final no Git (ex: `v1.0.0`).
+    *   Submeter o projeto.
 
 ## Scripts (teste rápido)
 Criaremos `scripts/run.sh` e `Makefile` para facilitar build e execução.

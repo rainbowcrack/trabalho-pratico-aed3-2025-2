@@ -103,6 +103,7 @@ public class Interface {
         System.out.println(ANSI_BOLD + ANSI_CYAN + "            🐾 PetMatch - Login 🐾           " + ANSI_RESET);
         System.out.println(ANSI_BOLD + ANSI_CYAN + "══════════════════════════════════════════════" + ANSI_RESET);
         System.out.println(ANSI_YELLOW + "Dica: Admin = (admin / admin). Demais: use CPF e senha cadastrados." + ANSI_RESET);
+        mostrarLoginsDisponiveis(adotanteDao, voluntarioDao);
         System.out.print("Usuário: ");
         String usuario = sc.nextLine().trim();
         if (usuario.equals("0")) return null;
@@ -129,6 +130,27 @@ public class Interface {
 
         System.out.println(ANSI_RED + "Usuário não encontrado ou senha incorreta. (Digite 0 como usuário para sair)" + ANSI_RESET);
         return telaLogin(sc, adotanteDao, voluntarioDao);
+    }
+
+    private static void mostrarLoginsDisponiveis(AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) {
+        try {
+            List<Adotante> adotantes = adotanteDao.listAllActive();
+            List<Voluntario> voluntarios = voluntarioDao.listAllActive();
+            System.out.println(ANSI_CYAN + "→ Logins de exemplo:" + ANSI_RESET);
+            System.out.println("  Admin: admin / admin");
+            if (!adotantes.isEmpty()) {
+                System.out.println("  Adotantes (CPF / senha):");
+                adotantes.stream().limit(5).forEach(a ->
+                        System.out.printf("    - %s / %s (%s)\n", a.getCpf(), a.getSenha(), a.getNomeCompleto()));
+            }
+            if (!voluntarios.isEmpty()) {
+                System.out.println("  Voluntários (CPF / senha):");
+                voluntarios.stream().limit(5).forEach(v ->
+                        System.out.printf("    - %s / %s (%s)\n", v.getCpf(), v.getSenha(), v.getNome()));
+            }
+        } catch (Exception e) {
+            // silencioso
+        }
     }
 
     private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) throws IOException {

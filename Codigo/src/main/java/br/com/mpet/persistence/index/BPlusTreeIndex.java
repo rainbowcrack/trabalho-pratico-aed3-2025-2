@@ -3,9 +3,9 @@ package br.com.mpet.persistence.index;
 import br.com.mpet.persistence.io.FileHeaderHelper;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -34,81 +34,73 @@ import java.util.TreeMap;
  *       index.remove(10);
  *   }
  */
-public class BPlusTreeIndex implements AutoCloseable {
+public class BPlusTreeIndex<K extends Comparable<K>, V> implements AutoCloseable {
 
     private final RandomAccessFile raf;
     private FileHeaderHelper.BPlusTreeHeader header;
     private volatile boolean closed = false;
 
-    private final TreeMap<Integer, Long> map = new TreeMap<>();
+    // A implementação real da Árvore B+ em disco iria aqui.
+    // Por enquanto, usamos um TreeMap para simular o comportamento em memória.
+    private final TreeMap<K, V> map = new TreeMap<>();
+
+    private final Serializer<K> keySerializer;
+    private final Serializer<V> valueSerializer;
 
     public BPlusTreeIndex(File file, byte versaoFormato, int ordemDaArvore) throws IOException {
+        this(file, versaoFormato, ordemDaArvore, (Serializer<K>) new IntegerSerializer(), (Serializer<V>) new LongSerializer());
+    }
+
+    public BPlusTreeIndex(File file, byte versaoFormato, int ordemDaArvore, Serializer<K> keySerializer, Serializer<V> valueSerializer) throws IOException {
         this.raf = new RandomAccessFile(file, "rw");
         this.header = FileHeaderHelper.initBPlusIfEmpty(raf, versaoFormato, ordemDaArvore);
+        this.keySerializer = keySerializer;
+        this.valueSerializer = valueSerializer;
         loadAll();
     }
 
     /** Carrega todas as entradas (key->offset) do arquivo para a memória. */
     private void loadAll() throws IOException {
         map.clear();
-        long pos = FileHeaderHelper.HEADER_SIZE;
-        long len = raf.length();
-        while (pos + 12 <= len) { // 4 bytes int + 8 bytes long
-            raf.seek(pos);
-            int key = raf.readInt();
-            long off = raf.readLong();
-            map.put(key, off);
-            pos += 12;
+        raf.seek(FileHeaderHelper.HEADER_SIZE);
+        while (raf.getFilePointer() < raf.length()) {
+            K key = keySerializer.fromRAF(raf);
+            V value = valueSerializer.fromRAF(raf);
+            map.put(key, value);
         }
-        header.countTotalDeRegistros = map.size();
-        header.ponteiroParaNoRaiz = FileHeaderHelper.HEADER_SIZE; // placeholder
-        FileHeaderHelper.writeBPlus(raf, header);
+        if (map.size() != header.countTotalDeRegistros) {
+            header.countTotalDeRegistros = map.size();
+            FileHeaderHelper.writeBPlus(raf, header);
+        }
     }
 
     /** Regrava a área de entradas com o conteúdo atual do TreeMap (ordenado). */
     private void persistAll() throws IOException {
-        // Reescreve a partir do HEADER_SIZE
         raf.setLength(FileHeaderHelper.HEADER_SIZE);
         raf.seek(FileHeaderHelper.HEADER_SIZE);
-        for (Map.Entry<Integer, Long> e : map.entrySet()) {
-            raf.writeInt(e.getKey());
-            raf.writeLong(e.getValue());
+        for (var entry : map.entrySet()) {
+            keySerializer.toRAF(raf, entry.getKey());
+            valueSerializer.toRAF(raf, entry.getValue());
         }
         header.countTotalDeRegistros = map.size();
-        header.ponteiroParaNoRaiz = FileHeaderHelper.HEADER_SIZE; // ainda sem nós
         FileHeaderHelper.writeBPlus(raf, header);
     }
 
-    /**
-     * Insere ou atualiza uma chave no índice.
-     * Exemplo: index.put(42, 2048L)
-     */
-    public synchronized void put(int key, long offset) throws IOException {
-        map.put(key, offset);
+    public synchronized void put(K key, V value) throws IOException {
+        map.put(key, value);
         persistAll();
     }
 
-    /**
-     * Obtém o offset associado à chave ou null se não existir.
-     * Exemplo: Long off = index.get(42);
-     */
-    public synchronized Long get(int key) {
+    public synchronized V get(K key) {
         return map.get(key);
     }
 
-    /**
-     * Remove a chave do índice, se existir.
-     * Exemplo: index.remove(42)
-     */
-    public synchronized void remove(int key) throws IOException {
+    public synchronized void remove(K key) throws IOException {
         if (map.remove(key) != null) {
             persistAll();
         }
     }
 
-    /**
-     * Retorna o número de chaves no índice (apenas informativo).
-     */
     public synchronized int size() {
         return map.size();
     }
@@ -116,8 +108,56 @@ public class BPlusTreeIndex implements AutoCloseable {
     @Override
     public synchronized void close() throws IOException {
         if (closed) return;
-        persistAll();
-        raf.close();
-        closed = true;
+        try {
+            persistAll();
+        } finally {
+            raf.close();
+            closed = true;
+        }
     }
+
+    // --- Serializers ---
+    public interface Serializer<T> {
+        void toRAF(RandomAccessFile raf, T value) throws IOException;
+        T fromRAF(RandomAccessFile raf) throws IOException;
+    }
+
+    public static class IntegerSerializer implements Serializer<Integer> {
+        @Override
+        public void toRAF(RandomAccessFile raf, Integer value) throws IOException {
+            raf.writeInt(value);
+        }
+        @Override
+        public Integer fromRAF(RandomAccessFile raf) throws IOException {
+            return raf.readInt();
+        }
+    }
+
+    public static class LongSerializer implements Serializer<Long> {
+        @Override
+        public void toRAF(RandomAccessFile raf, Long value) throws IOException {
+            raf.writeLong(value);
+        }
+        @Override
+        public Long fromRAF(RandomAccessFile raf) throws IOException {
+            return raf.readLong();
+        }
+    }
+
+    public static class ArvoreElementoSerializer implements Serializer<ArvoreElemento> {
+        @Override
+        public void toRAF(RandomAccessFile raf, ArvoreElemento value) throws IOException {
+            raf.write(value.toByteArray());
+        }
+
+        @Override
+        public ArvoreElemento fromRAF(RandomAccessFile raf) throws IOException {
+            ArvoreElemento el = new ArvoreElemento();
+            byte[] bytes = new byte[el.size()];
+            raf.readFully(bytes);
+            el.fromByteArray(bytes);
+            return el;
+        }
+    }
+
 }

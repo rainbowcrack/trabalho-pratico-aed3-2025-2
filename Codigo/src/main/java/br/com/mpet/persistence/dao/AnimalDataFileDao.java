@@ -65,13 +65,13 @@ public class AnimalDataFileDao extends AnimalDao {
 
     // Índice primário (id -> offset) usando B+ simplificado em arquivo .idx
     private final Map<Integer, Long> indexById = new HashMap<>(); // cache em memória
-    private final BPlusTreeIndex bplus;
+    private final BPlusTreeIndex<Integer, Long> bplus;
 
     public AnimalDataFileDao(File file, byte versaoFormato) throws IOException {
         super(file, versaoFormato);
         // Arquivo de índice B+ (mesmo nome + .idx)
         File idxFile = new File(file.getParentFile(), file.getName() + ".idx");
-        this.bplus = new BPlusTreeIndex(idxFile, versaoFormato, 64);
+        this.bplus = new BPlusTreeIndex<>(idxFile, versaoFormato, 64);
         rebuildIfEmpty();
     }
 

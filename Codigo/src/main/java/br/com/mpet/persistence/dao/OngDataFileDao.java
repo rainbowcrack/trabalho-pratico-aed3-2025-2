@@ -23,7 +23,7 @@ public class OngDataFileDao extends BaseDataFile<Ong> implements CrudDao<Ong, In
     private static final int REC_POS_PAYLOAD = 9;   // +9..+9+len-1
 
     private final Map<Integer, Long> indexById = new HashMap<>();
-    private final BPlusTreeIndex bplus;
+    private final BPlusTreeIndex<Integer, Long> bplus;
 
     public OngDataFileDao(File file, byte versaoFormato) throws IOException {
         super(file, versaoFormato);

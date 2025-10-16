@@ -6,6 +6,14 @@ import br.com.mpet.persistence.dao.AdotanteDataFileDao;
 import br.com.mpet.persistence.dao.OngDataFileDao;
 import br.com.mpet.persistence.dao.VoluntarioDataFileDao;
 import br.com.mpet.persistence.dao.AdocaoDataFileDao;
+import br.com.mpet.persistence.dao.InteresseDataFileDao;
+import br.com.mpet.persistence.dao.ChatThreadDataFileDao;
+import br.com.mpet.persistence.dao.ChatMessageDataFileDao;
+import br.com.mpet.model.Interesse;
+import br.com.mpet.model.InteresseStatus;
+import br.com.mpet.model.ChatThread;
+import br.com.mpet.model.ChatMessage;
+import br.com.mpet.model.ChatSender;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -41,6 +49,12 @@ public class Interface {
     private static final String VOLUNTARIOS_DATA_FILENAME = "voluntarios.dat";
     private static final String VOLUNTARIOS_IDX_FILENAME = "voluntarios.dat.idx";
     private static final String ADOCOES_DATA_FILENAME = "adocoes.dat";
+    private static final String INTERESSES_DATA_FILENAME = "interesses.dat";
+    private static final String CHAT_THREADS_DATA_FILENAME = "chat_threads.dat";
+    private static final String CHAT_MSGS_DATA_FILENAME = "chat_msgs.dat";
+    private static final String INTERESSES_IDX_FILENAME = "interesses.dat.idx";
+    private static final String CHAT_THREADS_IDX_FILENAME = "chat_threads.dat.idx";
+    private static final String CHAT_MSGS_IDX_FILENAME = "chat_msgs.dat.idx";
     private static final String ZIP_FILENAME = "backup.zip";
 
     private static final File ANIMAIS_DATA_FILE = new File(DATA_DIR, ANIMAIS_DATA_FILENAME);
@@ -53,6 +67,12 @@ public class Interface {
     private static final File VOLUNTARIOS_DATA_FILE = new File(DATA_DIR, VOLUNTARIOS_DATA_FILENAME);
     private static final File VOLUNTARIOS_IDX_FILE = new File(DATA_DIR, VOLUNTARIOS_IDX_FILENAME);
     private static final File ADOCOES_DATA_FILE = new File(DATA_DIR, ADOCOES_DATA_FILENAME);
+    private static final File INTERESSES_DATA_FILE = new File(DATA_DIR, INTERESSES_DATA_FILENAME);
+    private static final File CHAT_THREADS_DATA_FILE = new File(DATA_DIR, CHAT_THREADS_DATA_FILENAME);
+    private static final File CHAT_MSGS_DATA_FILE = new File(DATA_DIR, CHAT_MSGS_DATA_FILENAME);
+    private static final File INTERESSES_IDX_FILE = new File(DATA_DIR, INTERESSES_IDX_FILENAME);
+    private static final File CHAT_THREADS_IDX_FILE = new File(DATA_DIR, CHAT_THREADS_IDX_FILENAME);
+    private static final File CHAT_MSGS_IDX_FILE = new File(DATA_DIR, CHAT_MSGS_IDX_FILENAME);
     private static final byte VERSAO = 1;
 
     // --- Cores ANSI para o Console ---
@@ -79,7 +99,10 @@ public class Interface {
             OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
             AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
             VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO);
-            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO)
+            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO);
+            InteresseDataFileDao interesseDao = new InteresseDataFileDao(INTERESSES_DATA_FILE, VERSAO);
+            ChatThreadDataFileDao chatThreadDao = new ChatThreadDataFileDao(CHAT_THREADS_DATA_FILE, VERSAO);
+            ChatMessageDataFileDao chatMsgDao = new ChatMessageDataFileDao(CHAT_MSGS_DATA_FILE, VERSAO)
         ) {
             while (true) {
                 UsuarioLogado login = telaLogin(sc, adotanteDao, voluntarioDao);
@@ -88,9 +111,9 @@ public class Interface {
                     return;
                 }
                 switch (login.tipo) {
-                    case ADMIN -> menuAdmin(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao);
-                    case ADOTANTE -> menuAdotanteLogado(sc, adotanteDao, animalDao, (Adotante) login.usuario);
-                    case VOLUNTARIO -> menuVoluntarioLogado(sc, voluntarioDao, animalDao, (Voluntario) login.usuario);
+                    case ADMIN -> menuAdmin(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao);
+                    case ADOTANTE -> menuAdotanteLogado(sc, adotanteDao, animalDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao, (Adotante) login.usuario);
+                    case VOLUNTARIO -> menuVoluntarioLogado(sc, voluntarioDao, animalDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao, (Voluntario) login.usuario);
                 }
             }
         } catch (Exception e) {
@@ -157,7 +180,7 @@ public class Interface {
         }
     }
 
-    private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao) throws IOException {
+    private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) throws IOException {
         while (true) {
             System.out.println(ANSI_CYAN + ANSI_BOLD + "\n🐾 PetMatch - Painel do Admin 🐾" + ANSI_RESET);
             System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
@@ -176,7 +199,7 @@ public class Interface {
                 case "3" -> menuAdotantes(sc, adotanteDao);
                 case "4" -> menuVoluntarios(sc, voluntarioDao);
                 case "6" -> menuAdocoes(sc, adocaoDao, adotanteDao, animalDao);
-                case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao);
+                case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao);
                 case "0" -> { return; }
                 default -> System.out.println(ANSI_RED + "Opção inválida. Tente novamente." + ANSI_RESET);
             }
@@ -517,12 +540,14 @@ public class Interface {
     // =================================================================================
     // PAINÉIS DE USUÁRIOS LOGADOS
     // =================================================================================
-    private static void menuAdotanteLogado(Scanner sc, AdotanteDataFileDao adotanteDao, AnimalDataFileDao animalDao, Adotante a) throws IOException {
+    private static void menuAdotanteLogado(Scanner sc, AdotanteDataFileDao adotanteDao, AnimalDataFileDao animalDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao, Adotante a) throws IOException {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Painel do Adotante ---" + ANSI_RESET);
             System.out.println("1) Ver meus dados");
             System.out.println("2) Editar meus dados básicos");
             System.out.println("3) Listar animais disponíveis");
+            System.out.println("4) Demonstrar interesse em um animal");
+            System.out.println("5) Ver minhas conversas");
             System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
@@ -534,19 +559,28 @@ public class Interface {
                     adotanteDao.update(a);
                     System.out.println(ANSI_GREEN + "Dados atualizados." + ANSI_RESET);
                 }
-                case "3" -> listarAnimais(animalDao);
+                case "3" -> listarAnimaisDisponiveis(animalDao, adocaoDao);
+                case "4" -> demonstrarInteresse(sc, a, animalDao, adocaoDao, interesseDao);
+                case "5" -> verMinhasConversas(sc, a, chatThreadDao, chatMsgDao);
                 case "0" -> { return; }
                 default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
             }
         }
     }
 
-    private static void menuVoluntarioLogado(Scanner sc, VoluntarioDataFileDao voluntarioDao, AnimalDataFileDao animalDao, Voluntario v) throws IOException {
+    private static void menuVoluntarioLogado(Scanner sc, VoluntarioDataFileDao voluntarioDao, AnimalDataFileDao animalDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao, Voluntario v) throws IOException {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Painel do Voluntário ---" + ANSI_RESET);
             System.out.println("1) Ver meus dados");
             System.out.println("2) Editar meus dados básicos");
-            System.out.println("3) Listar animais da ONG " + v.getIdOng());
+            System.out.println("3) Listar animais da minha ONG");
+            System.out.println("4) Criar animal na minha ONG");
+            System.out.println("5) Editar animal da minha ONG");
+            System.out.println("6) Remover animal da minha ONG");
+            System.out.println("7) Interessados por um animal");
+            System.out.println("8) Aprovar match (abrir chat)");
+            System.out.println("9) Chats: listar e enviar mensagem");
+            System.out.println("10) Confirmar adoção");
             System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
@@ -558,10 +592,14 @@ public class Interface {
                     voluntarioDao.update(v);
                     System.out.println(ANSI_GREEN + "Dados atualizados." + ANSI_RESET);
                 }
-                case "3" -> {
-                    List<Animal> todos = animalDao.listAllActive();
-                    todos.stream().filter(an -> an.getIdOng() == v.getIdOng()).forEach(Interface::imprimirAnimal);
-                }
+                case "3" -> listarAnimaisDaMinhaOng(animalDao, v.getIdOng(), adocaoDao);
+                case "4" -> criarAnimalVoluntario(sc, animalDao, v.getIdOng());
+                case "5" -> editarAnimalVoluntario(sc, animalDao, v.getIdOng());
+                case "6" -> removerAnimalVoluntario(sc, animalDao, v.getIdOng());
+                case "7" -> listarInteressadosPorAnimal(sc, v.getIdOng(), animalDao, interesseDao);
+                case "8" -> aprovarMatchAbrirChat(sc, v.getIdOng(), animalDao, interesseDao, chatThreadDao);
+                case "9" -> chatsListarEEnviar(sc, v.getIdOng(), chatThreadDao, chatMsgDao);
+                case "10" -> confirmarAdocao(sc, v.getIdOng(), animalDao, interesseDao, adocaoDao, chatThreadDao, chatMsgDao);
                 case "0" -> { return; }
                 default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
             }
@@ -681,7 +719,7 @@ public class Interface {
     // =================================================================================
     // MENU SISTEMA
     // =================================================================================
-    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao) {
+    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Sistema ---" + ANSI_RESET);
             System.out.println("1) Fazer Backup (ZIP)");
@@ -702,6 +740,9 @@ public class Interface {
                             adotanteDao.close();
                             voluntarioDao.close();
                             adocaoDao.close();
+                            interesseDao.close();
+                            chatThreadDao.close();
+                            chatMsgDao.close();
                             restoreZip();
                             System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
                             System.exit(0);
@@ -714,6 +755,9 @@ public class Interface {
                         adotanteDao.vacuum();
                         voluntarioDao.vacuum();
                         adocaoDao.vacuum();
+                        interesseDao.vacuum();
+                        chatThreadDao.vacuum();
+                        chatMsgDao.vacuum();
                         System.out.println(ANSI_GREEN + "Compactação concluída. É recomendado reiniciar o programa." + ANSI_RESET);
                     }
                     case "0" -> { return; }
@@ -906,6 +950,13 @@ public class Interface {
             zipOne(zos, VOLUNTARIOS_DATA_FILE, VOLUNTARIOS_DATA_FILENAME);
             zipOne(zos, VOLUNTARIOS_IDX_FILE, VOLUNTARIOS_IDX_FILENAME);
             zipOne(zos, ADOCOES_DATA_FILE, ADOCOES_DATA_FILENAME);
+            zipOne(zos, new File(DATA_DIR, ADOCOES_DATA_FILENAME+".idx"), ADOCOES_DATA_FILENAME+".idx");
+            zipOne(zos, INTERESSES_DATA_FILE, INTERESSES_DATA_FILENAME);
+            zipOne(zos, INTERESSES_IDX_FILE, INTERESSES_IDX_FILENAME);
+            zipOne(zos, CHAT_THREADS_DATA_FILE, CHAT_THREADS_DATA_FILENAME);
+            zipOne(zos, CHAT_THREADS_IDX_FILE, CHAT_THREADS_IDX_FILENAME);
+            zipOne(zos, CHAT_MSGS_DATA_FILE, CHAT_MSGS_DATA_FILENAME);
+            zipOne(zos, CHAT_MSGS_IDX_FILE, CHAT_MSGS_IDX_FILENAME);
         }
         System.out.println(ANSI_GREEN + "Backup gerado com sucesso em: " + ZIP_FILE.getAbsolutePath() + ANSI_RESET);
         listZipContents(ZIP_FILE);
@@ -930,6 +981,9 @@ public class Interface {
                     case VOLUNTARIOS_DATA_FILENAME -> VOLUNTARIOS_DATA_FILE;
                     case VOLUNTARIOS_IDX_FILENAME -> VOLUNTARIOS_IDX_FILE;
                     case ADOCOES_DATA_FILENAME -> ADOCOES_DATA_FILE;
+                    case INTERESSES_DATA_FILENAME -> INTERESSES_DATA_FILE;
+                    case CHAT_THREADS_DATA_FILENAME -> CHAT_THREADS_DATA_FILE;
+                    case CHAT_MSGS_DATA_FILENAME -> CHAT_MSGS_DATA_FILE;
                     default -> null;
                 };
                 if (out != null) {
@@ -941,6 +995,184 @@ public class Interface {
                 zis.closeEntry();
             }
         }
+    }
+
+    // ================================
+    // FUNÇÕES DE APOIO: DISPONIBILIDADE E INTERAÇÕES
+    // ================================
+    private static boolean isAdotado(AdocaoDataFileDao adocaoDao, int idAnimal) throws IOException {
+        return adocaoDao.listAllActive().stream().anyMatch(a -> a.getIdAnimal() == idAnimal);
+    }
+
+    private static void listarAnimaisDisponiveis(AnimalDataFileDao animalDao, AdocaoDataFileDao adocaoDao) throws IOException {
+        List<Animal> todos = animalDao.listAllActive();
+        List<Animal> disp = todos.stream().filter(a -> {
+            try { return !isAdotado(adocaoDao, a.getId()); } catch (IOException e) { return false; }
+        }).toList();
+        System.out.println(ANSI_CYAN + "\n--- Animais Disponíveis ---" + ANSI_RESET);
+        if (disp.isEmpty()) { System.out.println(ANSI_YELLOW + "Nenhum disponível." + ANSI_RESET); return; }
+        disp.forEach(Interface::imprimirAnimal);
+    }
+
+    private static void demonstrarInteresse(Scanner sc, Adotante adotante, AnimalDataFileDao animalDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao) throws IOException {
+        listarAnimaisDisponiveis(animalDao, adocaoDao);
+        int id = perguntarInt(sc, "ID do animal para demonstrar interesse");
+        Optional<Animal> opt = animalDao.read(id);
+        if (opt.isEmpty()) { System.out.println(ANSI_RED + "Animal inválido." + ANSI_RESET); return; }
+        if (isAdotado(adocaoDao, id)) { System.out.println(ANSI_YELLOW + "Este animal já foi adotado." + ANSI_RESET); return; }
+        // evitar duplicar interesse
+        boolean existe = interesseDao.listAllActive().stream()
+                .anyMatch(i -> i.getIdAnimal() == id && adotante.getCpf().equals(i.getCpfAdotante()));
+        if (existe) { System.out.println(ANSI_YELLOW + "Você já demonstrou interesse por este animal." + ANSI_RESET); return; }
+        Interesse it = new Interesse();
+        it.setCpfAdotante(adotante.getCpf());
+        it.setIdAnimal(id);
+        it.setData(java.time.LocalDate.now());
+        it.setStatus(InteresseStatus.PENDENTE);
+        it.setAtivo(true);
+        interesseDao.create(it);
+        System.out.println(ANSI_GREEN + "Interesse registrado! Aguarde contato da ONG." + ANSI_RESET);
+    }
+
+    private static void listarAnimaisDaMinhaOng(AnimalDataFileDao animalDao, int idOng, AdocaoDataFileDao adocaoDao) throws IOException {
+        List<Animal> todos = animalDao.listAllActive();
+        todos.stream().filter(a -> a.getIdOng() == idOng).forEach(a -> {
+            boolean adotado;
+            try { adotado = isAdotado(adocaoDao, a.getId()); } catch (IOException e) { adotado = false; }
+            imprimirAnimal(a);
+            if (adotado) System.out.println("  > Status: ADOTADO");
+        });
+    }
+
+    private static void criarAnimalVoluntario(Scanner sc, AnimalDataFileDao animalDao, int idOng) throws IOException {
+        System.out.print("Tipo (C=cachorro, G=gato): ");
+        String t = sc.nextLine().trim().toUpperCase();
+        Animal a;
+        if (t.equals("C")) a = new Cachorro(); else if (t.equals("G")) a = new Gato(); else { System.out.println(ANSI_RED + "Tipo inválido." + ANSI_RESET); return; }
+        preencherBasicoAnimal(sc, a, idOng);
+        if (a instanceof Cachorro c) {
+            System.out.print("Raça: "); c.setRaca(sc.nextLine().trim());
+            c.setNivelAdestramento(perguntarEnum(sc, "Nível de adestramento (NENHUM/BASICO/AVANCADO): ", NivelAdestramento.class, NivelAdestramento.NENHUM));
+            c.setSeDaBemComCachorros(perguntarBool(sc, "Se dá bem com cachorros? (s/n): "));
+            c.setSeDaBemComGatos(perguntarBool(sc, "Se dá bem com gatos? (s/n): "));
+            c.setSeDaBemComCriancas(perguntarBool(sc, "Se dá bem com crianças? (s/n): "));
+        } else if (a instanceof Gato g) {
+            System.out.print("Raça: "); g.setRaca(sc.nextLine().trim());
+            g.setSeDaBemComCachorros(perguntarBool(sc, "Se dá bem com cachorros? (s/n): "));
+            g.setSeDaBemComGatos(perguntarBool(sc, "Se dá bem com gatos? (s/n): "));
+            g.setSeDaBemComCriancas(perguntarBool(sc, "Se dá bem com crianças? (s/n): "));
+            g.setAcessoExterior(perguntarBool(sc, "Tem acesso ao exterior? (s/n): "));
+            g.setPossuiTelamento(perguntarBool(sc, "Possui telamento? (s/n): "));
+        }
+        Animal salvo = animalDao.create(a);
+        System.out.println(ANSI_GREEN + "Animal criado! ID=" + salvo.getId() + ANSI_RESET);
+    }
+
+    private static void editarAnimalVoluntario(Scanner sc, AnimalDataFileDao animalDao, int idOng) throws IOException {
+        int id = perguntarInt(sc, "ID do animal da sua ONG a editar");
+        Optional<Animal> opt = animalDao.read(id);
+        if (opt.isEmpty() || opt.get().getIdOng() != idOng) { System.out.println(ANSI_RED + "Animal não pertence à sua ONG." + ANSI_RESET); return; }
+        Animal a = opt.get();
+        a.setNome(perguntarString(sc, "Nome", a.getNome()));
+        a.setDescricao(perguntarString(sc, "Descrição", a.getDescricao()));
+        if (a instanceof Cachorro c) {
+            c.setRaca(perguntarString(sc, "Raça", c.getRaca()));
+        } else if (a instanceof Gato g) {
+            g.setRaca(perguntarString(sc, "Raça", g.getRaca()));
+        }
+        // ONG não pode ser trocada pelo voluntário
+        boolean ok = animalDao.update(a);
+        System.out.println(ok ? ANSI_GREEN + "Atualizado." + ANSI_RESET : ANSI_RED + "Falha ao atualizar." + ANSI_RESET);
+    }
+
+    private static void removerAnimalVoluntario(Scanner sc, AnimalDataFileDao animalDao, int idOng) throws IOException {
+        int id = perguntarInt(sc, "ID do animal da sua ONG a remover");
+        Optional<Animal> opt = animalDao.read(id);
+        if (opt.isEmpty() || opt.get().getIdOng() != idOng) { System.out.println(ANSI_RED + "Animal não pertence à sua ONG." + ANSI_RESET); return; }
+        boolean ok = animalDao.delete(id);
+        System.out.println(ok ? ANSI_GREEN + "Removido." + ANSI_RESET : ANSI_YELLOW + "Não encontrado." + ANSI_RESET);
+    }
+
+    private static void listarInteressadosPorAnimal(Scanner sc, int idOng, AnimalDataFileDao animalDao, InteresseDataFileDao interesseDao) throws IOException {
+        int idAnimal = perguntarInt(sc, "ID do animal");
+        Optional<Animal> opt = animalDao.read(idAnimal);
+        if (opt.isEmpty() || opt.get().getIdOng() != idOng) { System.out.println(ANSI_RED + "Animal não pertence à sua ONG." + ANSI_RESET); return; }
+        List<Interesse> ints = interesseDao.listAllActive().stream().filter(i -> i.getIdAnimal() == idAnimal).toList();
+        if (ints.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem interessados." + ANSI_RESET); return; }
+        System.out.println(ANSI_CYAN + "Interessados (status):" + ANSI_RESET);
+        ints.forEach(i -> System.out.printf(" - id=%d | CPF=%s | %s | %s\n", i.getId(), i.getCpfAdotante(), i.getData(), i.getStatus()));
+    }
+
+    private static void aprovarMatchAbrirChat(Scanner sc, int idOng, AnimalDataFileDao animalDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao) throws IOException {
+        int idAnimal = perguntarInt(sc, "ID do animal");
+        Optional<Animal> opt = animalDao.read(idAnimal);
+        if (opt.isEmpty() || opt.get().getIdOng() != idOng) { System.out.println(ANSI_RED + "Animal não pertence à sua ONG." + ANSI_RESET); return; }
+        List<Interesse> pend = interesseDao.listAllActive().stream().filter(i -> i.getIdAnimal() == idAnimal && i.getStatus() == InteresseStatus.PENDENTE).toList();
+        if (pend.isEmpty()) { System.out.println(ANSI_YELLOW + "Nenhum interesse pendente." + ANSI_RESET); return; }
+        pend.forEach(i -> System.out.printf(" - id=%d | CPF=%s\n", i.getId(), i.getCpfAdotante()));
+        int idInteresse = perguntarInt(sc, "ID do interesse a aprovar");
+        Optional<Interesse> es = pend.stream().filter(i -> i.getId() == idInteresse).findFirst();
+        if (es.isEmpty()) { System.out.println(ANSI_RED + "Interesse inválido." + ANSI_RESET); return; }
+        Interesse i = es.get();
+        i.setStatus(InteresseStatus.APROVADO);
+        interesseDao.update(i);
+        // abrir chat se não existir
+        boolean exists = chatThreadDao.listAllActive().stream().anyMatch(t -> t.getIdAnimal() == idAnimal && i.getCpfAdotante().equals(t.getCpfAdotante()) && t.isAberto());
+        if (!exists) {
+            ChatThread t = new ChatThread();
+            t.setIdAnimal(idAnimal); t.setCpfAdotante(i.getCpfAdotante()); t.setAberto(true); t.setCriadoEm(java.time.LocalDateTime.now());
+            chatThreadDao.create(t);
+        }
+        System.out.println(ANSI_GREEN + "Match aprovado e chat aberto." + ANSI_RESET);
+    }
+
+    private static void chatsListarEEnviar(Scanner sc, int idOng, ChatThreadDataFileDao threadDao, ChatMessageDataFileDao msgDao) throws IOException {
+        List<ChatThread> threads = threadDao.listAllActive();
+        if (threads.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem chats." + ANSI_RESET); return; }
+        threads.forEach(t -> System.out.printf(" - Thread %d | Animal=%d | CPF=%s | Aberto=%s\n", t.getId(), t.getIdAnimal(), t.getCpfAdotante(), t.isAberto()));
+        int tid = perguntarInt(sc, "ID da thread para visualizar/enviar");
+        Optional<ChatThread> ot = threads.stream().filter(t -> t.getId() == tid).findFirst();
+        if (ot.isEmpty()) { System.out.println(ANSI_RED + "Thread inválida." + ANSI_RESET); return; }
+        ChatThread t = ot.get();
+        // Listar mensagens
+        List<ChatMessage> msgs = msgDao.listAllActive().stream().filter(m -> m.getThreadId() == t.getId()).toList();
+        if (msgs.isEmpty()) System.out.println("(sem mensagens)"); else msgs.forEach(m -> System.out.printf(" [%s] %s (%s)\n", m.getSender(), m.getConteudo(), m.getEnviadoEm()));
+        if (!t.isAberto()) { System.out.println(ANSI_YELLOW + "Thread fechada." + ANSI_RESET); return; }
+        String texto = perguntarString(sc, "Mensagem (vazio para cancelar)", "");
+        if (texto == null || texto.isBlank()) return;
+        ChatMessage m = new ChatMessage();
+        m.setThreadId(t.getId()); m.setSender(ChatSender.VOLUNTARIO); m.setConteudo(texto); m.setEnviadoEm(java.time.LocalDateTime.now()); m.setAtivo(true);
+        msgDao.create(m);
+        System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
+    }
+
+    private static void confirmarAdocao(Scanner sc, int idOng, AnimalDataFileDao animalDao, InteresseDataFileDao interesseDao, AdocaoDataFileDao adocaoDao, ChatThreadDataFileDao threadDao, ChatMessageDataFileDao msgDao) throws IOException {
+        int idAnimal = perguntarInt(sc, "ID do animal");
+        Optional<Animal> opt = animalDao.read(idAnimal);
+        if (opt.isEmpty() || opt.get().getIdOng() != idOng) { System.out.println(ANSI_RED + "Animal não pertence à sua ONG." + ANSI_RESET); return; }
+        if (isAdotado(adocaoDao, idAnimal)) { System.out.println(ANSI_YELLOW + "Já adotado." + ANSI_RESET); return; }
+        List<Interesse> aprov = interesseDao.listAllActive().stream().filter(i -> i.getIdAnimal() == idAnimal && i.getStatus() == InteresseStatus.APROVADO).toList();
+        if (aprov.isEmpty()) { System.out.println(ANSI_YELLOW + "Não há matches aprovados." + ANSI_RESET); return; }
+        aprov.forEach(i -> System.out.printf(" - CPF=%s\n", i.getCpfAdotante()));
+        String cpf = perguntarString(sc, "CPF do adotante para confirmar", null);
+        Optional<Interesse> es = aprov.stream().filter(i -> i.getCpfAdotante().equals(cpf)).findFirst();
+        if (es.isEmpty()) { System.out.println(ANSI_RED + "CPF não aprovado para este animal." + ANSI_RESET); return; }
+        br.com.mpet.model.Adocao ad = new br.com.mpet.model.Adocao();
+        ad.setCpfAdotante(cpf); ad.setIdAnimal(idAnimal); ad.setDataAdocao(java.time.LocalDate.now()); ad.setAtivo(true);
+        adocaoDao.create(ad);
+        // Fechar todos os chats do animal e notificar demais pretendentes (opcional)
+        List<ChatThread> threads = threadDao.listAllActive().stream().filter(t -> t.getIdAnimal() == idAnimal && t.isAberto()).toList();
+        for (ChatThread t : threads) {
+            if (!t.getCpfAdotante().equals(cpf)) {
+                ChatMessage aviso = new ChatMessage();
+                aviso.setThreadId(t.getId()); aviso.setSender(ChatSender.VOLUNTARIO);
+                aviso.setConteudo("[Automática] Este animal foi adotado. Chat encerrado.");
+                aviso.setEnviadoEm(java.time.LocalDateTime.now()); aviso.setAtivo(true);
+                msgDao.create(aviso);
+            }
+            t.setAberto(false); threadDao.update(t);
+        }
+        System.out.println(ANSI_GREEN + "Adoção confirmada. Chats fechados e animal removido da lista de disponíveis." + ANSI_RESET);
     }
 
     private static void zipOne(ZipOutputStream zos, File file, String entryName) throws IOException {
@@ -969,6 +1201,53 @@ public class Interface {
                 zis.closeEntry();
             }
             if (count == 0) System.out.println("(vazio)");
+        }
+    }
+
+    // ================================
+    // ADOTANTE: VER MENSAGENS/CHATS
+    // ================================
+    private static void verMinhasConversas(Scanner sc, Adotante a, ChatThreadDataFileDao threadDao, ChatMessageDataFileDao msgDao) throws IOException {
+        List<ChatThread> minhas = threadDao.listAllActive().stream()
+                .filter(t -> a.getCpf().equals(t.getCpfAdotante()))
+                .toList();
+        if (minhas.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "Você não possui conversas." + ANSI_RESET);
+            return;
+        }
+        System.out.println(ANSI_CYAN + "Suas conversas:" + ANSI_RESET);
+        minhas.forEach(t -> System.out.printf(" - Thread %d | Animal=%d | Aberto=%s | Criado=%s\n",
+                t.getId(), t.getIdAnimal(), t.isAberto(), String.valueOf(t.getCriadoEm())));
+        int tid = perguntarInt(sc, "ID da thread para visualizar");
+        Optional<ChatThread> ot = minhas.stream().filter(t -> t.getId() == tid).findFirst();
+        if (ot.isEmpty()) { System.out.println(ANSI_RED + "Thread inválida." + ANSI_RESET); return; }
+        ChatThread t = ot.get();
+
+        List<ChatMessage> msgs = msgDao.listAllActive().stream()
+                .filter(m -> m.getThreadId() == t.getId())
+                .sorted((m1, m2) -> {
+                    var d1 = m1.getEnviadoEm(); var d2 = m2.getEnviadoEm();
+                    if (d1 == null && d2 == null) return Integer.compare(m1.getId(), m2.getId());
+                    if (d1 == null) return -1; if (d2 == null) return 1; return d1.compareTo(d2);
+                })
+                .toList();
+        System.out.println(ANSI_CYAN + "Mensagens:" + ANSI_RESET);
+        if (msgs.isEmpty()) System.out.println("(sem mensagens)");
+        else msgs.forEach(m -> System.out.printf(" [%s] %s (%s)\n", m.getSender(), m.getConteudo(), String.valueOf(m.getEnviadoEm())));
+        if (!t.isAberto()) {
+            System.out.println(ANSI_YELLOW + "Esta conversa está encerrada." + ANSI_RESET);
+            return;
+        }
+        String texto = perguntarString(sc, "Escreva uma mensagem (vazio para cancelar)", "");
+        if (texto != null && !texto.isBlank()) {
+            ChatMessage m = new ChatMessage();
+            m.setThreadId(t.getId());
+            m.setSender(ChatSender.ADOTANTE);
+            m.setConteudo(texto);
+            m.setEnviadoEm(java.time.LocalDateTime.now());
+            m.setAtivo(true);
+            msgDao.create(m);
+            System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
         }
     }
 }

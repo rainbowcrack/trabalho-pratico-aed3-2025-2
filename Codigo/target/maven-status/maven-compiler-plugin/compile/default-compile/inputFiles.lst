@@ -4,10 +4,15 @@
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Adotante.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Animal.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Cachorro.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/ChatMessage.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/ChatSender.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/ChatThread.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/ComposicaoFamiliar.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Exame.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Gato.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/HistoricoMedico.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Interesse.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/InteresseStatus.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/NivelAdestramento.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Ong.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Porte.java
@@ -25,6 +30,9 @@
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AdotanteDataFileDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AnimalDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AnimalDataFileDao.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/ChatMessageDataFileDao.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/ChatThreadDataFileDao.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/InteresseDataFileDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/OngDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/OngDataFileDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/UsuarioDataFileDao.java

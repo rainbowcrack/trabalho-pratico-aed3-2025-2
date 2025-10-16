@@ -1,333 +1,183 @@
-# MPet Backend
+# MPet Backend (CLI + Persistência Binária)
 
-CRUD binário com índice B+ simplificado e CLI para animais (Cachorro/Gato).
+Sistema de adoção de pets com backend em Java (CLI) e camada de persistência binária própria. Implementa CRUDs, relacionamentos, interesse/match/chat e adoções, com índices B+ em arquivo para acesso rápido.
 
-## Escopo atual
-- Persistência em arquivo `.dat` com cabeçalho fixo (128 bytes) e registros: `[tipo][tombstone][id][len][payload]`.
-- Índice B+ simplificado em `.idx` (lista ordenada de pares `id -> offset`, com cabeçalho B+).
-- CLI (`br.com.mpet.Interface`) para criar/ler/listar/editar/remover/vacuum, backup/restore em ZIP.
-- Remoção da ficha médica detalhada; campos principais:
-	- `vacinado` (booleano)
-	- `descricao` (condição de saúde, texto)
+Principais características:
+- Persistência file-based (RandomAccessFile) com cabeçalho fixo e registros de tamanho variável
+- Serialização binária consistente via `Codec` (Strings U16, enums, tri-boolean, datas)
+- Índice B+ por entidade com arquivo `.idx` dedicado (id → offset)
+- CLI interativa com login por papel (Admin, Adotante, Voluntário)
+- Backup/Restore em ZIP e compactação (vacuum)
 
-## Modelo de dados
-Campos comuns de `Animal`:
-- `id` (int, sequencial)
-- `idOng` (int)
-- `nome` (String)
-- `dataNascimentoAprox` (LocalDate, opcional)
-- `sexo` (char: M/F/U)
-- `porte` (enum: PEQUENO/MEDIO/GRANDE)
-- `vacinado` (boolean)
-- `descricao` (String, opcional)
+Repositório: código fonte em `Codigo/`, dados em `dats/`.
 
-Cachorro:
-- `raca` (String)
-- `nivelAdestramento` (enum: NENHUM/BASICO/AVANCADO)
-- `seDaBemComCachorros`, `seDaBemComGatos`, `seDaBemComCriancas` (boolean)
+## Como compilar e executar
 
-Gato:
-- `raca` (String)
-- `seDaBemComCachorros`, `seDaBemComGatos`, `seDaBemComCriancas` (boolean)
-- `acessoExterior`, `possuiTelamento` (boolean)
+Linux/macOS (bash):
 
-## Formato do payload (Codec)
-Ordem nos registros de Animal:
-1) idOng (int)
-2) nome (StringU16)
-3) dataNascimentoAprox (LocalDate)
-4) sexo (char)
-5) porte (Enum)
-6) vacinado (TriBoolean 'V'/'F'/'U')
-7) descricao (StringU16)
-
-Depois, campos específicos da espécie conforme acima.
-
-Semântica de StringU16:
-- null -> 0xFFFF (tamanho -1)
-- "" -> tamanho 0
-
-Enum: ordinal+1 (0 = null)
-
-## Como rodar (Windows PowerShell)
-> Observação: se não tiver Maven instalado, peça para incluir Maven Wrapper.
-
-- Compilar (com Maven):
+1) Compilar
 ```
-mvn -f Codigo\pom.xml -q -DskipTests package
+mvn -f Codigo/pom.xml -q -DskipTests package
 ```
 
-- Executar a CLI (usando a classe Interface via IDE ou com `java -cp` apontando para `target/classes`).
+2) Executar a CLI
+```
+java -cp "Codigo/target/classes" br.com.mpet.Interface
+```
 
-Arquivos são gravados em `dats/`:
-- `animais.dat` e `animais.dat.idx`
-- `animais.zip` (backup manual)
+Observações:
+- O `Makefile` usa PowerShell (Windows). No Linux, use o Maven direto como acima.
+- Os arquivos `.dat`/`.idx` e `backup.zip` ficam em `dats/`.
 
-## Scripts para terminal
-- Makefile (usa PowerShell internamente):
-	- `make build` — compila
-	- `make run` — executa a CLI (`br.com.mpet.Interface`)
-	- `make clean` — limpa
-- PowerShell puro:
-	- `scripts/run.ps1` — compila e roda a Interface
+## Arquitetura e formato de arquivos
 
-## Organização do backend (guia por arquivo) 📁
+Cada entidade persiste em um `.dat` com cabeçalho de 128 bytes (FileHeaderHelper) e registros do tipo:
+- Animal: `[tipo(1)][tombstone(1)][id(4)][len(4)][payload(len)]`
+- Usuários (Adotante/Voluntário): `[tipo(1)][tombstone(1)][idKey(4)][len(4)][payload(len)]`
+- Outras entidades (ONG, Adoção, Interesse, ChatThread, ChatMessage): `[tombstone(1)][id(4)][len(4)][payload(len)]`
 
-Estrutura relevante (backend):
-- `Codigo/pom.xml` — Configuração do Maven: Java 21, plugins de compile/jar, resources. Ajuste o `main.class` se quiser empacotar um jar executável.
-- `Codigo/src/main/java/br/com/mpet/Interface.java` — CLI interativa para CRUD de Animais em arquivo binário. Menu com criar, ler, listar, editar, remover, vacuum, backup e restore. Todos os arquivos persistidos ficam em `dats/`.
+Convenções do `Codec`:
+- StringU16: 0xFFFF = null, 0x0000 = "" (vazia)
+- Enum: ordinal+1 (0 = null)
+- Tri-Boolean: 'V' true, 'F' false, 'U' indefinido
+- LocalDate: 1 byte flag (0=null) + year(int) + month(byte) + day(byte)
+- LocalDateTime (threads/mensagens de chat): epoch seconds (long), 0 = null
 
-### Modelos (pacote `br.com.mpet.model`)
-- `Animal.java` — Classe abstrata base dos animais. Campos: `id`, `idOng`, `nome`, `dataNascimentoAprox`, `sexo`, `porte`, `vacinado`, `descricao`, `ativo` (espelha tombstone). Sem ficha médica detalhada (foi removida do modelo persistido).
-- `Cachorro.java` — Extende `Animal`. Campos: `raca`, `nivelAdestramento`, booleans de convivência (`seDaBemComCachorros`, `...Gatos`, `...Criancas`).
-- `Gato.java` — Extende `Animal`. Campos: `raca`, booleans de convivência e ambiente (`acessoExterior`, `possuiTelamento`).
-- `Porte.java` — Enum de porte: `PEQUENO`, `MEDIO`, `GRANDE`.
-- `NivelAdestramento.java` — Enum: `NENHUM`, `BASICO`, `AVANCADO`.
-- `Usuario.java` — Base para `Adotante` e `Voluntario` (campos típicos de usuário: email/senha/cpf/telefone/ativo). Usado fora do escopo imediato de Animal.
-- `Adotante.java` / `Voluntario.java` / `Ong.java` — Entidades de cadastro. Persistência via DAOs específicos (a evoluir). 
-- `HistoricoMedico.java` / `Vacina.java` / `Exame.java` — Suporte a ficha médica detalhada (não está sendo persistida atualmente). Mantidos no repo para evolução futura.
-- Outros: `ComposicaoFamiliar.java`, `ResultadoTeste.java`, `Role.java`, `Temperamento.java`, `TipoMoradia.java` — enums/POJOs auxiliares do domínio.
+Índices B+ (`.idx`):
+- AnimalDataFileDao, UsuarioDataFileDao (Adotante/Voluntário) e OngDataFileDao sempre usaram B+.
+- AdocaoDataFileDao, InteresseDataFileDao, ChatThreadDataFileDao e ChatMessageDataFileDao também usam agora B+ (adicionado).
+- Cada DAO mantém cache em memória (Map<K, Long>) e persiste no `.idx` com BTree.
 
-### Persistência (pacote `br.com.mpet.persistence`)
-- `BaseDataFile.java` — Base com utilitários de acesso ao `.dat`: cabeçalho, append, tombstone, etc. Fechamento idempotente (tolera múltiplos `close()` sem exceção).
-- `CrudDao.java` — Interface genérica de CRUD com `create/read/update/delete/listAllActive/rebuildIfEmpty/vacuum/close`.
+Vacuum:
+1. Cria arquivo temporário e regrava apenas registros ativos
+2. Substitui o `.dat`
+3. Substitui o `.idx` correspondente
+4. Reabra o DAO/CLI para refletir os novos offsets
 
-#### DAOs (pacote `br.com.mpet.persistence.dao`)
-- `AnimalDao.java` — Abstração da família de DAOs de Animal.
-- `AnimalDataFileDao.java` — Implementação concreta file-based (binária) para `Animal`/`Cachorro`/`Gato`:
-	- Layout de registro: `[tipo(1)][tomb(1)][id(4)][len(4)][payload(len)]`.
-	- Índice primário em B+ simplificado: `id -> offset` persistido em `.idx` (classe `BPlusTreeIndex`).
-	- Operações: `create` (append + index), `read` (via índice), `update` (in-place se tamanho igual; senão tombstone + append + index), `delete` (tombstone + remove index), `listAllActive`, `rebuildIfEmpty`, `vacuum` (gera arquivo temporário, regrava apenas ativos, troca `.dat` e `.idx`).
-	- Serialização usa `Codec` (ver abaixo). Campos comuns incluem `vacinado`.
-- `AdotanteDao.java`, `VoluntarioDao.java`, `OngDao.java` — Stubs/DAOs para outras entidades (em evolução).
+Backup/Restore (ZIP):
+- Backup inclui todos `.dat` e `.idx` (animais, ongs, adotantes, voluntários, adoções, interesses, chats)
+- Restore sobrescreve os arquivos em `dats/` (a CLI fecha os DAOs antes)
 
-#### Índices (pacote `br.com.mpet.persistence.index`)
-- `BPlusTreeIndex.java` — “B+ Tree” simplificada: mantém chaves em memória (`TreeMap`) e persiste a lista ordenada como `(int key, long offset)` com um cabeçalho B+. `put/get/remove/size/close`. Fechamento idempotente.
+## Entidades e campos (resumo)
 
-#### I/O helpers (pacote `br.com.mpet.persistence.io`)
-- `Codec.java` — Codificadores/decodificadores binários:
-	- Primitivos: `int/long/char` (big-endian), booleans com tri-estado `V/F/U`.
-	- Strings U16: `null=0xFFFF`, `""=0`.
-	- Enums: `ordinal+1` (`0=null`).
-	- `LocalDate` com flag de presença.
-	- Vários métodos utilitários e concatenação de payloads.
-- `FileHeaderHelper.java` — Cabeçalhos de 128 bytes para `.dat` e `.idx` (B+ e Hash extensível):
-	- Header principal (`versaoFormato`, `proximoId`, `countAtivos`).
-	- Header B+ (`ponteiroParaNoRaiz`, `ordemDaArvore`, `alturaDaArvore`, `countTotalDeRegistros`, `ponteiroParaListaDeNosLivres`).
-	- Header Hash (planejado para relacionamentos 1:N).
+- Animal (abstrato) → Cachorro, Gato
+    - Comuns: id, idOng, nome, dataNascimentoAprox, sexo, porte, vacinado, descricao, ativo
+    - Cachorro: raca, nivelAdestramento, convive(cães/gatos/crianças)
+    - Gato: raca, convive(cães/gatos/crianças), acessoExterior, possuiTelamento
 
-### Recursos (pacote `src/main/resources`)
-- `public/` (HTML/CSS/JS) — Frontend estático do site. Fora do escopo deste README (backend).
-- `script-db/db.sql` — Esquema SQL de referência (não usado pelo backend file-based atual). Mantido como documentação/apoio.
+- Ong
+    - id (int), nome, cnpj, endereco, telefone, cpfResponsavel (String), ativo
 
-### Scripts e automação
-- `Makefile` — Targets `build`, `run`, `clean` usando PowerShell.
-- `scripts/run.ps1` — Script PowerShell para compilar e executar a CLI.
-- Diretório de dados: `dats/` — Local onde são gravados `.dat`, `.idx` e backups `.zip`.
+- Usuario (base) → Adotante, Voluntario
+    - Comuns: cpf, senha, telefone, ativo
+    - Adotante: nomeCompleto, dataNascimento, tipoMoradia, tela protetora, outros animais (desc), horas fora de casa, composicao familiar, viagens (desc), já teve pets, experiência, motivo, ciência de responsável/custos
+    - Voluntario: nome, endereco, idOng, cargo (Role)
 
-## Fluxos principais (CLI) 🖥️
-- Criar (1): coleta dados básicos (inclui `vacinado`) e específicos (Gato/Cachorro), salva e mostra `id`.
-- Ler (2): busca por `id` via índice B+.
-- Listar (3): varre o `.dat` e carrega somente registros ativos.
-- Editar (4): atualiza campos, com update in-place quando possível.
-- Remover (5): tombstone lógico + remove do índice.
-- Compactar (6): `vacuum` (regrava só ativos, substitui `.dat` e `.idx`).
-- Restaurar (8) e Backup (9): ZIP contendo `animais.dat` e `animais.dat.idx` em `dats/`.
+- Adocao
+    - id (int), cpfAdotante (String), idAnimal (int), dataAdocao (LocalDate), ativo
 
-## Boas práticas e pitfalls
-- Sempre reabrir o DAO após operações que substituem arquivos (vacuum/restore) — a `Interface` já faz isso.
-- O índice `.idx` é sincronizado a cada mutação; não editar arquivos manualmente.
-- A ordem dos campos no payload deve ser mantida para compatibilidade.
+- Interesse
+    - id (int), cpfAdotante (String), idAnimal (int), data (LocalDate), status (PENDENTE/APROVADO/RECUSADO), ativo
 
-## Tasks e prazos (detalhado em 15/10/2025)
+- ChatThread
+    - id (int), idAnimal (int), cpfAdotante (String), aberto (boolean), criadoEm (LocalDateTime)
 
-### Até Domingo, 12/10: Finalização dos CRUDs e Preparação do Ambiente
+- ChatMessage
+    - id (int), threadId (int), sender (ADOTANTE/VOLUNTARIO), conteudo (String), enviadoEm (LocalDateTime), ativo
 
-1.  **Terminar os CRUDs (DAO e CLI)**
-    *   **DAO para `Ong`:**
-        *   Criar a classe `OngDataFileDao` usando `AnimalDataFileDao` como base.
-        *   A chave primária será `Integer` (ID sequencial), gerenciada pelo cabeçalho do arquivo.
-        *   Implementar os métodos `encodeOng` e `decodeOng` para serializar/desserializar os campos da entidade `Ong`.
-        *   Adaptar os métodos `create`, `read`, `update` e `delete` para o contexto de `Ong`.
-    *   **DAO para `Adotante` e `Voluntario`:**
-        *   Criar as classes `AdotanteDataFileDao` e `VoluntarioDataFileDao`.
-        *   A chave primária será `String` (CPF). O `Map` de índice em memória e a Árvore B+ devem ser parametrizados para `String`.
-        *   O CPF será o primeiro campo do *payload*, não haverá um ID sequencial no cabeçalho do registro.
-        *   Implementar os métodos `encode/decode` para cada entidade.
-        *   Ajustar o método `rebuildIfEmpty` para ler o CPF do payload de cada registro ao reconstruir o índice.
-    *   **Integração na CLI (`Interface.java`):**
-        *   Adicionar novas opções no menu principal para gerenciar ONGs, Adotantes e Voluntários.
-        *   Para cada entidade, criar submenus com as opções de criar, ler, listar, editar e remover.
-        *   Conectar cada opção da CLI ao método correspondente no respectivo DAO.
+## DAOs principais
 
-2.  **Fazer Scripts Bash e Makefile para Testar no Terminal**
-    *   **`Makefile`:**
-        *   Criar um `Makefile` na raiz do projeto.
-        *   Adicionar um *target* `build` que executa `mvn -f Codigo/pom.xml package`.
-        *   Adicionar um *target* `run` que executa a CLI via `java -cp ... br.com.mpet.Interface`.
-        *   Adicionar um *target* `clean` que remove os diretórios `target/` e `dats/`.
-    *   **Script Bash (`scripts/run.sh`):**
-        *   Criar um script shell que automatiza a compilação e execução, facilitando testes rápidos em ambientes Linux/macOS.
+- AnimalDataFileDao: CRUD polimórfico de Animal (Cachorro/Gato) com B+ id→offset
+- UsuarioDataFileDao<T extends Usuario>: CRUD (CPF como chave lógica) com idKey int derivado do CPF e B+ idKey→offset; verificação de CPF no payload
+- OngDataFileDao: CRUD com B+ id→offset
+- AdocaoDataFileDao, InteresseDataFileDao, ChatThreadDataFileDao, ChatMessageDataFileDao: CRUD com B+ id→offset (adicionados), rebuild, vacuum com troca do `.idx`
 
-3.  **Fazer "Deploy" no Terminal**
-    *   **Empacotamento (Uber-JAR):**
-        *   Configurar o `maven-shade-plugin` ou similar no `pom.xml` para gerar um JAR único e executável (`uber-jar`) que inclua todas as dependências.
-        *   Garantir que o `MANIFEST.MF` do JAR final aponte corretamente para a classe principal (`br.com.mpet.Interface`).
-    *   **Script de Deploy (`deploy.sh`):**
-        *   Criar um script que simula um deploy local:
-            1.  Executa o build do Maven para gerar o `uber-jar`.
-            2.  Cria um diretório `deploy/`.
-            3.  Copia o JAR gerado para dentro de `deploy/`.
-            4.  Gera um script `start.sh` dentro de `deploy/` com o comando `java -jar nome-do-app.jar` para facilitar a execução.
+## CLI e fluxos
 
-### Até Terça, 14/10: Implementação de Relacionamentos
+Login:
+- Admin: usuário=admin, senha=admin
+- Adotante/Voluntário: via CPF + senha
+- Tela de login exibe logins/CPFs de exemplo (se houver dados)
 
-1.  **Relacionamentos 1:N com Hash Extensível**
-    *   **Definição:** Implementar a relação **1 ONG -> N Animais**.
-    *   **Índice Secundário:**
-        *   Criar uma classe `HashIndex` que implementa a lógica de um índice baseado em Hash Extensível. Este índice mapeará uma chave (ex: `idOng`) a uma lista de *offsets* dos registros relacionados no arquivo `.dat`.
-        *   O estado do Hash (profundidade global, diretório, buckets) será persistido em um arquivo próprio (ex: `animais_ong.hidx`).
-    *   **Integração no `AnimalDataFileDao`:**
-        *   Instanciar o `HashIndex` para gerenciar o mapeamento `idOng -> offset do Animal`.
-        *   Nos métodos `create`, `update` (se o `idOng` mudar) e `delete` de `Animal`, atualizar o `HashIndex` para manter a consistência.
-        *   Implementar o método `listByOng(Integer idOng)` que utiliza o `HashIndex` para encontrar rapidamente todos os animais de uma ONG sem varrer o arquivo de dados principal.
+Painel do Admin:
+- Gerenciar Animais (CRUD, vincula/exige ONG existente)
+- Gerenciar ONGs (CRUD, responsável por CPF de voluntário)
+- Gerenciar Adotantes (CRUD)
+- Gerenciar Voluntários (CRUD, seleção de ONG)
+- Gerenciar Adoções (registrar/listar/remover/listar por CPF)
+- Sistema: Backup/Restore/Vacuum (inclui todos os `.dat`/`.idx`)
 
-### Até Quarta, 15/10: Testes e Documentação
+Painel do Adotante:
+- Ver/editar meus dados
+- Listar animais disponíveis (exclui animais já adotados)
+- Demonstrar interesse (sem duplicar interesse para o mesmo animal)
+- Ver minhas conversas (lê mensagens; se thread aberta, envia mensagens)
 
-1.  **Último Teste (Fluxo Completo)**
-    *   Executar um teste de ponta a ponta via CLI:
-        1.  Criar uma ONG.
-        2.  Criar múltiplos Animais associados a essa ONG.
-        3.  Listar os animais daquela ONG específica.
-        4.  Criar um Adotante.
-        5.  Editar os dados do Adotante e de um Animal.
-        6.  Remover um Animal.
-        7.  Executar o `vacuum` e verificar se os dados permanecem consistentes.
-        8.  Fazer backup e restore.
+Painel do Voluntário (limitado à sua ONG):
+- CRUD de animais da própria ONG (não permite trocar ONG na edição)
+- Listar interessados por animal (status)
+- Aprovar match (abre ou usa thread de chat para o par adotante–animal)
+- Chats: listar threads e enviar mensagens
+- Confirmar adoção (cria Adocao, fecha threads do animal e notifica candidatos não escolhidos)
 
-2.  **Completar a Documentação**
-    *   Revisar todos os comentários Javadoc nas classes principais (DAOs, `Codec`, Índices), garantindo que a ordem dos campos e as regras de negócio estejam claras.
-    *   Atualizar o `README.md` com a descrição final da arquitetura, incluindo os novos DAOs e a implementação do relacionamento 1:N.
-    *   Adicionar uma seção sobre como usar os novos scripts (`Makefile`, `run.sh`, `deploy.sh`).
+Regras/validações relevantes:
+- Ao criar/editar Animal, a ONG é sempre escolhida de uma lista válida
+- `Ong.cpfResponsavel` (String) substitui id de voluntário: escolha por lista de voluntários ativos
+- Senhas são mostradas nos prints para Admin (uso didático). Não use este projeto como referência de segurança.
 
-### Até Quinta, 16/10: Entrega
+## Layout de payload (ordem e Codec)
 
-- [ ] **Enviar**
-    *   Verificar se todos os artefatos estão no repositório.
-    *   Criar uma tag final no Git (ex: `v1.0.0`).
-    *   Submeter o projeto.
+Animal (comuns): idOng, nome, dataNascimentoAprox, sexo, porte, vacinado, descricao
+- Cachorro: raca, nivelAdestramento, seDaBemComCachorros, seDaBemComGatos, seDaBemComCriancas
+- Gato: raca, seDaBemComCachorros, seDaBemComGatos, seDaBemComCriancas, acessoExterior, possuiTelamento
 
-## Scripts (teste rápido)
-Criaremos `scripts/run.sh` e `Makefile` para facilitar build e execução.
+Ong: nome, cnpj, endereco, telefone, cpfResponsavel
 
-## Notas
-- O vacuum compacta o `.dat` e sincroniza o `.idx` correspondente.
-- Backup/restore funcionam via ZIP sob `dats/`.
-O sistema deve permitir o cadastro e o gerenciamento de Voluntários, Adotantes, ONGs e Animais, possibilitando a integração entre ONGs e adotantes. Além disso, deve fornecer uma métrica de compatibilidade entre os animais disponíveis para doação e os perfis dos adotantes.
+Usuario (prefixado com CPF, senha, telefone, ativo):
+- Adotante: + nomeCompleto, dataNascimento, tipoMoradia, tela, outrosAnimais, descOutrosAnimais, horasForaDeCasa, composicaoFamiliar, viagens, descViagens, jaTevePets, experiencia, motivoAdocao, cienteResponsavel, cienteCustos
+- Voluntario: + nome, endereco, idOng, cargo
 
+Adocao: cpfAdotante, idAnimal, dataAdocao
 
-# Back End 
+Interesse: cpfAdotante, idAnimal, data, status
 
-Esta seção documenta toda a implementação do backend: arquitetura, formato de dados, algoritmos (KMP, LZW, XOR) e manutenção (vacuum), além dos endpoints disponíveis e como executar.
+ChatThread: idAnimal, cpfAdotante, aberto, criadoEm (epoch long)
 
-## Visão geral
-- Linguagem/Build: Java 17 + Maven, app standalone usando HttpServer do JDK (sem frameworks).
-- Escopo: CRUD de Voluntário, Adotante, ONG e Animal com persistência em arquivos binários, índices (Árvore B+ e Hash Extensível), compressão de payloads (LZW), senha com cifra XOR, buscas parciais (KMP) e rotina de compactação (vacuum).
-- Código relevante: `Codigo/src/main/java/br/com/mpet/**`.
+ChatMessage: threadId, sender, conteudo, enviadoEm (epoch long)
 
-## Como executar
-1) Build do jar:
-	 - Dentro de `Codigo/`: `mvn -DskipTests package`
-	 - Saída: `Codigo/target/backend-0.1.0.jar`
-2) Rodar servidor:
-	 - `java -jar target/backend-0.1.0.jar` (variável `PORT` opcional, padrão 8080)
-3) Front-end estático: servido em `/` a partir de `Codigo/src/main/resources/public/`.
+Manter esta ordem é obrigatório para compatibilidade e leitura correta dos dados anteriores.
 
-## Estrutura de dados e persistência
-Cada entidade é serializada de/para bytes em um arquivo binário próprio, gerenciado por `BinaryFileStore`:
-- Formato de registro: `[tombstone(1 byte)] [length(4 bytes, int)] [payload(length bytes)]`.
-	- `tombstone = 0` ativo, `1` removido logicamente.
-	- `payload` é o objeto serializado (campos) e é comprimido com LZW ao gravar; ao ler, é descomprimido.
-- Operações:
-	- Create: escreve no fim do arquivo e retorna o offset (posição) físico.
-	- Read: busca o offset pelo índice e lê/decodifica o registro.
-	- Update: tenta sobrescrever in-place; se crescer, marca antigo como removido e regrava no fim (offset muda) e o índice é atualizado.
-	- Delete: marca o registro como removido e remove a chave do índice.
+## Datasets e arquivos
 
-Arquivos gerados (por padrão em `Codigo/data/`):
-- Voluntários: `voluntarios.dat` + índice `voluntarios.bpt` (Árvore B+)
-- Adotantes: `adotantes.dat` + índice `adotantes.ehash` (Hash Extensível)
-- ONGs: `ongs.dat` + índice `ongs.bpt` (Árvore B+)
-- Animais: `animais.dat` + índice `animais.ehash` (Hash Extensível)
+Diretório `dats/` (criado no primeiro run):
+- animais.dat | animais.dat.idx
+- ongs.dat | ongs.dat.idx
+- adotantes.dat | adotantes.dat.idx
+- voluntarios.dat | voluntarios.dat.idx
+- adocoes.dat | adocoes.dat.idx
+- interesses.dat | interesses.dat.idx
+- chat_threads.dat | chat_threads.dat.idx
+- chat_msgs.dat | chat_msgs.dat.idx
+- backup.zip
 
-## Índices: Árvore B+ e Hash Extensível
-- Árvore B+ (Voluntário/ONG): estrutura ordenada em memória com ordem fixa, permitindo iteração em ordem e busca por chave. É persistida em arquivo texto simples (pares `chave<TAB>offset`) ao fechar a aplicação; no bootstrap, é recarregada reinserindo as chaves. Usada porque preserva ordenação (ex.: listar ONGs em ordem de nome).
-- Hash Extensível (Adotante/Animal): diretório com profundidade global e buckets com profundidade local. Buckets dividem ao encher, ajustando o diretório. Persistência também em formato texto (profundidade + diretório + conteúdo de buckets). Usado pela velocidade de acesso direto por chave.
-- Recuperação de índice: em cada repositório há um `rebuildIfEmpty()` que, se necessário, varre o arquivo `.dat` e repopula o índice.
+## Limitações e avisos
 
-## Compactação (LZW)
-- O que é: algoritmo clássico de compressão sem perdas baseado em dicionário (Lempel–Ziv–Welch). Reduz tamanho de payloads armazenados.
-- Como usamos: `BinaryFileStore` aplica `LZWCodec` ao escrever (encode) e desfaz ao ler (decode). Transparente para os repositórios.
-- Benefícios: economiza espaço e I/O; custo computacional moderado adequado ao cenário.
+- Sem criptografia de senhas (campo em texto para fins didáticos e inspeção por Admin)
+- Sem concorrência multi-processo/threads garantida (RandomAccessFile + sincronização simples)
+- Sem testes automatizados; verifique pela CLI
+- Mudanças na ordem de campos quebram compatibilidade com dados antigos
 
-## Criptografia XOR (senhas)
-- O que é: cifra de fluxo simples aplicando XOR entre bytes da senha e de uma chave repetida.
-- Implementação: `XorCipher.encrypt(senha, "mpet")` gera `senhaEnc` em hexadecimal. Os modelos `Voluntario`, `Adotante` e `Ong` armazenam o campo `senhaEnc` serializado no payload.
-- Login: endpoint compara `senhaEnc` calculado com o persistido (sem guardar senhas em texto puro).
+## Roadmap / Pendências
 
-## Casamento de padrões (KMP)
-- O que é: algoritmo Knuth–Morris–Pratt para busca de substring em tempo linear.
-- Uso: buscas parciais por fragmento de texto (ex.: nome/sobrenome de voluntários/adotantes, nome/espécie de animais). Implementado em `br.com.mpet.algorithms.KMP` e usado nos repositórios ao filtrar resultados.
+- Índices secundários (opcionais):
+    - Por `idAnimal` em `ChatThread/ChatMessage` e `Interesse` para filtrar sem varrer
+    - Por `cpfAdotante` em `Interesse` e `Adocao`
+- UX da CLI: mostrar nome do animal nas listas de threads/mensagens
+- Impedir criar interesse em animal já adotado já no input (além de filtrar na listagem)
+- Migrações de versão de payload (header.versaoFormato) para evolução de campos
+- Testes automatizados (unidade/integração) e scripts de seeds
+- Segurança: ocultar senhas por padrão e exigir permissões explícitas para exibição
 
-## Vacuum (compactação de arquivo)
-- Problema: updates que crescem e deletes deixam “buracos” (registros tombados) no `.dat`.
-- Solução: `vacuum()` reescreve o arquivo, mantendo apenas registros ativos, retornando novos offsets; em seguida os índices são reconstruídos para apontar para as novas posições compactadas.
-- Como chamar: endpoint `POST /api/admin/vacuum` executa vacuum para todas as entidades. Resposta inclui `ok` e o tempo em ms. Observação: o endpoint não possui autenticação de propósito didático; pode-se proteger com um header secreto simples.
+## Licença
 
-## Endpoints
-- Saúde: `GET /health` → `{ "status": "ok" }`
-- Login: `POST /api/login` body `{ "usuario": "<cpf|nome_ong>", "senha": "..." }`
-
-- Voluntários (`cpf` é a chave):
-	- `GET /api/voluntarios?nome=<frag>` lista filtrando por fragmento (KMP) em nome/sobrenome.
-	- `GET /api/voluntarios/{cpf}` retorna um voluntário.
-	- `POST /api/voluntarios` cria (body: cpf, nome, sobrenome, idade, senha). A senha vira `senhaEnc` com XOR.
-	- `PUT /api/voluntarios/{cpf}` atualiza o registro do cpf.
-	- `DELETE /api/voluntarios/{cpf}` remove.
-
-- Adotantes (`cpf`):
-	- `GET /api/adotantes?nome=<frag>` busca por fragmento de nome/sobrenome.
-	- `GET /api/adotantes/{cpf}`
-	- `POST /api/adotantes` (cpf, nome, sobrenome, idade, endereco, senha)
-	- `PUT /api/adotantes/{cpf}`
-	- `DELETE /api/adotantes/{cpf}`
-
-- ONGs (`nome` é a chave):
-	- `GET /api/ongs` lista em ordem alfabética (graças à Árvore B+).
-	- `GET /api/ongs/{nome}`
-	- `POST /api/ongs` (nome, endereco, telefone, senha)
-	- `PUT /api/ongs/{nome}`
-	- `DELETE /api/ongs/{nome}`
-
-- Animais (`id`):
-	- `GET /api/animais?nome=<frag>&especie=<frag>&castrado=<true|false>`
-	- `GET /api/animais/{id}`
-	- `POST /api/animais` (id, nome, idade, especie, se_castrado)
-	- `PUT /api/animais/{id}`
-	- `DELETE /api/animais/{id}`
-
-- Manutenção:
-	- `POST /api/admin/vacuum` → compacta todos os `.dat` e reconstrói índices.
-
-### Exemplos (JSON simplificado)
-- Criar voluntário:
-	Request: `{ "cpf":"123", "nome":"Ana", "sobrenome":"Silva", "idade":25, "senha":"segredo" }`
-	Response 201: `{ "cpf":"123", "nome":"Ana", "sobrenome":"Silva", "idade":25 }`
-- Buscar voluntários: `GET /api/voluntarios?nome=si` → retorna array JSON com correspondências por KMP.
-- Login: `POST /api/login` `{ "usuario":"123", "senha":"segredo" }` → `{ "tipo":"voluntario", "id":"123" }`.
-
-## Limitações e próximos passos
-- Validação de entrada e erros podem ser enriquecidos (mensagens, 400/404/405 mais detalhados).
-- Concorrência: repositórios não são sincronizados; para alta concorrência, adicionar locks.
-- Segurança: adicionar controle de acesso ao `/api/admin/vacuum`.
-- Testes automatizados: unitários (armazenamento/índices) e integração dos endpoints.
+MIT

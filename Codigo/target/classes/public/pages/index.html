@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,19 +14,69 @@
                 <!-- <span style="font-size: 2rem; font-weight: bold;">PetMatch</span> -->
             </div>
             <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
-                <li><a href="index.html" style="color: #fff; text-decoration: none; font-weight: bold;">início</a></li>
-                <li><a href="match.html" style="color: #fff; text-decoration: none; font-weight: bold;">matches</a></li>
-                <li><a href="sobre.html" style="color: #fff; text-decoration: none; font-weight: bold;">sobre</a></li>
+                <li><a href="index.html">início</a></li>
+                <li><a href="match.html">matches</a></li>
+                <li><a href="sobre.html">sobre</a></li>
             </ul>
         </nav>
     </header>
 
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="reveal">
+                    <h1 class="hero-title">Encontre seu novo melhor amigo com <span class="gradient-text">um deslize</span> ❤️</h1>
+                    <p class="hero-subtitle">Descubra cães e gatos disponíveis para adoção perto de você. Simples, rápido e com a cara do seu estilo.</p>
+                    <div class="btn-row">
+                        <a class="btn btn-primary" href="match.html">Começar agora</a>
+                        <a class="btn btn-outline" href="#como-funciona">Como funciona</a>
+                    </div>
+                </div>
+                <div class="hero-illustration reveal">
+                    <div class="bubble one"></div>
+                    <div class="bubble two"></div>
+                    <div class="bubble three"></div>
+                </div>
+            </div>
+        </section>
 
+        <section id="como-funciona" class="section">
+            <div class="container">
+                <h2 class="section-title reveal">Como funciona</h2>
+                <div class="grid cols-3">
+                    <div class="card reveal">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Explore</h3>
+                        <p class="muted">Veja perfis com fotos, idade, porte e personalidade.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="feature-icon">👉</div>
+                        <h3>Deslize</h3>
+                        <p class="muted">Curta ou recuse. Use setas do teclado no match.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="feature-icon">🤝</div>
+                        <h3>Conecte</h3>
+                        <p class="muted">Combinou? Nós aproximamos você da ONG.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title reveal">Pets em destaque</h2>
+                <div class="scroller" id="featuredPets">
+                    <!-- preenchido via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
 
     <footer style="background: var(--primary); color: #fff; text-align: center; padding: 1rem; border-top-left-radius: var(--border-radius); border-top-right-radius: var(--border-radius); margin-top: 2rem;">
         © 2025 - PetMatch. Feito com ❤️ para adoção responsável.
     </footer>
 
-    
+    <script src="../assets/js/home.js"></script>
 </body>
 </html>

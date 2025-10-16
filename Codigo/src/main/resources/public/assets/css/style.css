@@ -2,6 +2,8 @@
 :root {
   --primary: linear-gradient(135deg, #ff3b3b, #ff8c42); /* Gradiente vermelho/laranja pokedex */
   --primary-solid: #ff6f61;      /* Coral/Tinder Red */
+  --brand1: #ff3b3b;
+  --brand2: #ff8c42;
   --secondary: #23232b;          /* Fundo cards */
   --accent: #ffb347;             /* Orange/Gold */
   --background: #181820;         /* Fundo geral */
@@ -24,8 +26,11 @@ body {
 }
 
 header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
   background: var(--primary);
-  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
   color: #fff;
   padding: 1.2rem 2rem;
   text-align: center;
@@ -45,6 +50,23 @@ nav ul li a {
 }
 nav ul li a:hover {
   color: var(--accent);
+}
+
+/* Links com sublinhado animado */
+nav ul li a {
+  position: relative;
+}
+nav ul li a::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -6px;
+  width: 0; height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  transition: width var(--transition);
+}
+nav ul li a:hover::after {
+  width: 100%;
 }
 
 .app-container {
@@ -79,7 +101,7 @@ nav ul li a:hover {
   border-radius: var(--border-radius);
   margin-bottom: 1rem;
   background: #222;
-  border: 2px solid #ff3b3b;
+  border: 2px solid var(--primary-solid);
 }
 
 .pet-info {
@@ -92,16 +114,15 @@ nav ul li a:hover {
 .pet-name {
   font-size: 1.5rem;
   font-weight: bold;
-  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
   text-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .pet-details {
-  color: #ff3b3b;
+  color: var(--primary-solid);
   font-size: 1rem;
   font-weight: bold;
   letter-spacing: 0.5px;
@@ -173,7 +194,7 @@ nav ul li a:hover {
 }
 
 footer {
-  background: linear-gradient(135deg, #ff3b3b, #ff8c42);
+  background: var(--primary);
   color: #fff;
   text-align: center;
   padding: 1rem;
@@ -205,4 +226,170 @@ footer {
     height: 56px;
     font-size: 1.8rem;
   }
+}
+
+/* ===================== */
+/* Landing/Hero e seções */
+/* ===================== */
+.container {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+}
+
+.hero {
+  position: relative;
+  padding: 3rem 0 2rem;
+  overflow: hidden;
+}
+.hero .container {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2rem;
+  align-items: center;
+}
+.hero-title {
+  font-size: clamp(1.8rem, 3vw + 1rem, 3rem);
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-subtitle {
+  color: var(--muted);
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.btn-row { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform var(--transition), filter var(--transition), box-shadow var(--transition);
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(255,111,97,0.25);
+}
+.btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #ff8c42;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); filter: brightness(0.95); }
+
+.hero-illustration {
+  position: relative;
+  height: 360px;
+  border-radius: var(--border-radius);
+  background: linear-gradient(135deg, rgba(255,59,59,0.25), rgba(255,140,66,0.2));
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), var(--shadow);
+  overflow: hidden;
+}
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(1px);
+  animation: float 9s ease-in-out infinite alternate;
+}
+.bubble.one { width: 120px; height: 120px; left: 10%; top: 15%; background: #ff6f6130; }
+.bubble.two { width: 80px; height: 80px; right: 12%; top: 10%; background: #ffb34730; animation-duration: 7s; }
+.bubble.three { width: 180px; height: 180px; right: 18%; bottom: -30px; background: #ff8c4230; }
+@keyframes float {
+  from { transform: translateY(0) translateX(0); }
+  to   { transform: translateY(-20px) translateX(8px); }
+}
+
+.section { padding: 2.5rem 0; }
+.section-title {
+  font-size: 1.6rem;
+  margin: 0 0 1.2rem;
+}
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card {
+  background: #1e1e27;
+  border: 1px solid #2a2a35;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), background var(--transition), border-color var(--transition);
+}
+.card:hover { transform: translateY(-4px); background: #242431; border-color: #353545; }
+.feature-icon { font-size: 1.8rem; }
+.muted { color: var(--muted); }
+
+/* Pets em destaque - scroller horizontal */
+.scroller {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 220px;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+}
+.scroller::-webkit-scrollbar { height: 8px; }
+.scroller::-webkit-scrollbar-thumb { background: #2e2e3a; border-radius: 8px; }
+.pet-mini {
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.pet-mini img {
+  width: 100%; height: 140px; object-fit: cover; border-radius: 12px;
+  border: 2px solid #2b2b36;
+}
+.pet-mini .name { font-weight: 700; margin-top: 0.5rem; }
+.badge { display: inline-block; background: #2a2a35; border: 1px solid #333344; padding: 0.18rem 0.5rem; border-radius: 999px; font-size: 0.78rem; color: #ffb347; }
+
+/* Animações de entrada simples */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.in-view { opacity: 1; transform: none; }
+
+/* Barra de progresso do Match */
+.match-progress {
+  width: 100%;
+  height: 8px;
+  background: #22222b;
+  border: 1px solid #2a2a35;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  margin-bottom: 1rem;
+}
+.match-progress > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand1), var(--brand2));
+  transition: width 0.4s ease;
+}
+
+@media (max-width: 900px) {
+  .hero .container { grid-template-columns: 1fr; }
+  .hero-illustration { height: 260px; }
+  .grid.cols-3 { grid-template-columns: 1fr; }
+}
+
+/* ======= Temas por tipo de pet ======= */
+body[data-theme="dog"] {
+  --primary: linear-gradient(135deg, #22c55e, #10b981);
+  --primary-solid: #22c55e;
+  --brand1: #22c55e;
+  --brand2: #10b981;
+  --accent: #a7f3d0;
 }

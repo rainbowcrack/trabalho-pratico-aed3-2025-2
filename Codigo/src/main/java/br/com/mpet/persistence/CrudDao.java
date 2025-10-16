@@ -36,5 +36,3 @@ public interface CrudDao<T, K> extends Closeable {
     @Override
     void close() throws IOException;
 }
-
-

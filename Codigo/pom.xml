@@ -12,25 +12,16 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>21</java.version>
-        <main.class>br.com.mpet.app.Server</main.class>
-        <!-- Versões do Spark e Scala -->
-        <spark.version>3.5.1</spark.version>
-        <scala.binary.version>2.13</scala.binary.version>
+        <java.version>17</java.version>
+        <main.class>br.com.mpet.Interface</main.class>
     </properties>
 
     <dependencies>
-        <!-- Dependência do Apache Spark Core -->
+        <!-- Dependência para manipulação de arquivos ZIP (usado no backup/restore) -->
         <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-        </dependency>
-        <!-- Dependência do Apache Spark SQL para trabalhar com DataFrames e Datasets -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.26.2</version>
         </dependency>
     </dependencies>
 

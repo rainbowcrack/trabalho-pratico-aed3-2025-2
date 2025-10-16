@@ -1,78 +1,93 @@
 package br.com.mpet.persistence;
 
 import br.com.mpet.persistence.io.FileHeaderHelper;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * Base utilitária para manipulação de arquivo .dat.
+ * Classe base para DAOs que persistem em arquivo binário.
+ * Gerencia o cabeçalho, o acesso ao arquivo e operações de baixo nível.
+ *
+ * @param <T> Tipo da entidade a ser persistida.
  */
-public abstract class BaseDataFile implements Closeable {
+public abstract class BaseDataFile<T> implements Closeable {
 
     protected final File file;
     protected final RandomAccessFile raf;
-    protected FileHeaderHelper.Header header;
     protected final byte versaoFormato;
-    protected volatile boolean closed = false;
+    protected FileHeaderHelper.Header header;
 
     protected BaseDataFile(File file, byte versaoFormato) throws IOException {
         this.file = file;
         this.versaoFormato = versaoFormato;
         this.raf = new RandomAccessFile(file, "rw");
-        this.header = FileHeaderHelper.initIfEmpty(raf, versaoFormato);
+        if (raf.length() < FileHeaderHelper.HEADER_SIZE) {
+            this.header = FileHeaderHelper.initIfEmpty(raf, versaoFormato);
+            persistHeader();
+        } else {
+            this.header = FileHeaderHelper.read(raf);
+            if (header.versaoFormato != versaoFormato) {
+                throw new IOException("Versão do formato de arquivo incompatível.");
+            }
+        }
     }
 
-    protected synchronized int nextIdAndIncrement() throws IOException {
-        int current = header.proximoId;
+    protected void persistHeader() throws IOException {
+        FileHeaderHelper.write(raf, header);
+    }
+
+    protected int nextIdAndIncrement() throws IOException {
+        int id = header.proximoId;
         header.proximoId++;
         persistHeader();
-        return current;
+        return id;
     }
 
-    protected synchronized void incrementCountAtivos() throws IOException {
+    protected void incrementCountAtivos() throws IOException {
         header.countAtivos++;
         persistHeader();
     }
 
-    protected synchronized void decrementCountAtivos() throws IOException {
-        header.countAtivos = Math.max(0, header.countAtivos - 1);
+    protected void decrementCountAtivos() throws IOException {
+        header.countAtivos--;
         persistHeader();
     }
 
-    protected synchronized void persistHeader() throws IOException {
-        FileHeaderHelper.write(raf, header);
-    }
-
-    protected synchronized long appendRecord(byte[] fullRecord) throws IOException {
+    protected long appendRecord(byte[] record) throws IOException {
         long offset = raf.length();
         raf.seek(offset);
-        raf.write(fullRecord);
+        raf.write(record);
         return offset;
     }
 
-    protected synchronized void markTombstone(long offset) throws IOException {
-        raf.seek(offset + 1); // pula tipoRegistro
-        raf.writeByte(1);
+    protected void overwritePayload(long offset, byte[] payload) throws IOException {
+        raf.seek(offset);
+        raf.write(payload);
     }
 
-    protected synchronized byte[] readBytes(long offset, int totalLength) throws IOException {
-        byte[] buf = new byte[totalLength];
+    protected void markTombstone(long offset) throws IOException {
+        raf.seek(offset);
+        raf.writeByte(1); // 1 = tombstone
+    }
+
+    protected byte[] readBytes(long offset, int len) throws IOException {
+        byte[] buf = new byte[len];
         raf.seek(offset);
         raf.readFully(buf);
         return buf;
     }
 
-    protected synchronized void overwritePayload(long payloadOffset, byte[] newPayload) throws IOException {
-        raf.seek(payloadOffset);
-        raf.write(newPayload);
-    }
-
     @Override
-    public synchronized void close() throws IOException {
-        if (closed) return;
-        closed = true;
-        raf.close();
+    public void close() throws IOException {
+        if (raf != null) {
+            try {
+                persistHeader();
+            } finally {
+                raf.close();
+            }
+        }
     }
 }

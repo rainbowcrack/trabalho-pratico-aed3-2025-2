@@ -2,7 +2,9 @@ package br.com.mpet;
 
 import br.com.mpet.model.*;
 import br.com.mpet.persistence.dao.AnimalDataFileDao;
+import br.com.mpet.persistence.dao.AdotanteDataFileDao;
 import br.com.mpet.persistence.dao.OngDataFileDao;
+import br.com.mpet.persistence.dao.VoluntarioDataFileDao;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -32,6 +34,10 @@ public class Interface {
     private static final String ANIMAIS_IDX_FILENAME = "animais.dat.idx";
     private static final String ONGS_DATA_FILENAME = "ongs.dat";
     private static final String ONGS_IDX_FILENAME = "ongs.dat.idx";
+    private static final String ADOTANTES_DATA_FILENAME = "adotantes.dat";
+    private static final String ADOTANTES_IDX_FILENAME = "adotantes.dat.idx";
+    private static final String VOLUNTARIOS_DATA_FILENAME = "voluntarios.dat";
+    private static final String VOLUNTARIOS_IDX_FILENAME = "voluntarios.dat.idx";
     private static final String ZIP_FILENAME = "backup.zip";
 
     private static final File ANIMAIS_DATA_FILE = new File(DATA_DIR, ANIMAIS_DATA_FILENAME);
@@ -39,6 +45,10 @@ public class Interface {
     private static final File ONGS_DATA_FILE = new File(DATA_DIR, ONGS_DATA_FILENAME);
     private static final File ONGS_IDX_FILE = new File(DATA_DIR, ONGS_IDX_FILENAME);
     private static final File ZIP_FILE = new File(DATA_DIR, ZIP_FILENAME);
+    private static final File ADOTANTES_DATA_FILE = new File(DATA_DIR, ADOTANTES_DATA_FILENAME);
+    private static final File ADOTANTES_IDX_FILE = new File(DATA_DIR, ADOTANTES_IDX_FILENAME);
+    private static final File VOLUNTARIOS_DATA_FILE = new File(DATA_DIR, VOLUNTARIOS_DATA_FILENAME);
+    private static final File VOLUNTARIOS_IDX_FILE = new File(DATA_DIR, VOLUNTARIOS_IDX_FILENAME);
     private static final byte VERSAO = 1;
 
     // --- Cores ANSI para o Console ---
@@ -66,14 +76,18 @@ public class Interface {
         try (
             Scanner sc = new Scanner(System.in);
             AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
-            OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO)
+            OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
+            AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO)
         ) {
             while (true) {
                 System.out.println(ANSI_CYAN + ANSI_BOLD + "\n🐾 PetMatch - Menu Principal 🐾" + ANSI_RESET);
                 System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
                 System.out.println("1) Gerenciar Animais");
                 System.out.println("2) Gerenciar ONGs");
-                System.out.println("3) Sistema (Backup/Restore/Vacuum)");
+                System.out.println("3) Gerenciar Adotantes");
+                System.out.println("4) Gerenciar Voluntários");
+                System.out.println("5) Sistema (Backup/Restore/Vacuum)");
                 System.out.println(ANSI_RED + "0) Sair" + ANSI_RESET);
                 System.out.print("Escolha uma opção: ");
 
@@ -81,7 +95,9 @@ public class Interface {
                 switch (op) {
                     case "1" -> menuAnimais(sc, animalDao);
                     case "2" -> menuOngs(sc, ongDao);
-                    case "3" -> menuSistema(sc, animalDao, ongDao);
+                    case "3" -> menuAdotantes(sc, adotanteDao);
+                    case "4" -> menuVoluntarios(sc, voluntarioDao);
+                    case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
                     case "0" -> {
                         System.out.println(ANSI_PURPLE + "Obrigado por usar o PetMatch! Até logo!" + ANSI_RESET);
                         return;
@@ -281,11 +297,40 @@ public class Interface {
         System.out.println(ok ? ANSI_GREEN + "ONG removida com sucesso (tombstone)." + ANSI_RESET : ANSI_YELLOW + "ONG não encontrada." + ANSI_RESET);
     }
 
+    // =================================================================================
+    // MENU ADOTANTES E VOLUNTÁRIOS (STUBS)
+    // =================================================================================
+    private static void menuAdotantes(Scanner sc, AdotanteDataFileDao dao) {
+        System.out.println(ANSI_YELLOW + "\n--- Gerenciar Adotantes (Não implementado) ---" + ANSI_RESET);
+        System.out.println("1) Criar Adotante");
+        System.out.println("2) Ler Adotante por CPF");
+        System.out.println("3) Listar Todos");
+        System.out.println("4) Editar Adotante");
+        System.out.println("5) Remover Adotante");
+        System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+        System.out.print("Escolha: ");
+        sc.nextLine(); // Consome a linha para o menu não implementado
+        System.out.println(ANSI_RED + "Funcionalidade ainda não implementada." + ANSI_RESET);
+    }
+
+    private static void menuVoluntarios(Scanner sc, VoluntarioDataFileDao dao) {
+        System.out.println(ANSI_YELLOW + "\n--- Gerenciar Voluntários (Não implementado) ---" + ANSI_RESET);
+        System.out.println("1) Criar Voluntário");
+        System.out.println("2) Ler Voluntário por CPF");
+        System.out.println("3) Listar Todos");
+        System.out.println("4) Editar Voluntário");
+        System.out.println("5) Remover Voluntário");
+        System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+        System.out.print("Escolha: ");
+        sc.nextLine(); // Consome a linha para o menu não implementado
+        System.out.println(ANSI_RED + "Funcionalidade ainda não implementada." + ANSI_RESET);
+    }
+
 
     // =================================================================================
     // MENU SISTEMA
     // =================================================================================
-    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao) {
+    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Sistema ---" + ANSI_RESET);
             System.out.println("1) Fazer Backup (ZIP)");
@@ -303,6 +348,8 @@ public class Interface {
                         if (perguntarBool(sc, "Deseja continuar? (s/n): ")) {
                             animalDao.close();
                             ongDao.close();
+                            adotanteDao.close();
+                            voluntarioDao.close();
                             restoreZip();
                             System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
                             System.exit(0);
@@ -312,6 +359,8 @@ public class Interface {
                         System.out.println(ANSI_YELLOW + "Iniciando compactação (vacuum)..." + ANSI_RESET);
                         animalDao.vacuum();
                         ongDao.vacuum();
+                        adotanteDao.vacuum();
+                        voluntarioDao.vacuum();
                         System.out.println(ANSI_GREEN + "Compactação concluída. É recomendado reiniciar o programa." + ANSI_RESET);
                     }
                     case "0" -> { return; }
@@ -443,6 +492,10 @@ public class Interface {
             zipOne(zos, ANIMAIS_IDX_FILE, ANIMAIS_IDX_FILENAME);
             zipOne(zos, ONGS_DATA_FILE, ONGS_DATA_FILENAME);
             zipOne(zos, ONGS_IDX_FILE, ONGS_IDX_FILENAME);
+            zipOne(zos, ADOTANTES_DATA_FILE, ADOTANTES_DATA_FILENAME);
+            zipOne(zos, ADOTANTES_IDX_FILE, ADOTANTES_IDX_FILENAME);
+            zipOne(zos, VOLUNTARIOS_DATA_FILE, VOLUNTARIOS_DATA_FILENAME);
+            zipOne(zos, VOLUNTARIOS_IDX_FILE, VOLUNTARIOS_IDX_FILENAME);
         }
         System.out.println(ANSI_GREEN + "Backup gerado com sucesso em: " + ZIP_FILE.getAbsolutePath() + ANSI_RESET);
         listZipContents(ZIP_FILE);
@@ -462,6 +515,10 @@ public class Interface {
                     case ANIMAIS_IDX_FILENAME -> ANIMAIS_IDX_FILE;
                     case ONGS_DATA_FILENAME -> ONGS_DATA_FILE;
                     case ONGS_IDX_FILENAME -> ONGS_IDX_FILE;
+                    case ADOTANTES_DATA_FILENAME -> ADOTANTES_DATA_FILE;
+                    case ADOTANTES_IDX_FILENAME -> ADOTANTES_IDX_FILE;
+                    case VOLUNTARIOS_DATA_FILENAME -> VOLUNTARIOS_DATA_FILE;
+                    case VOLUNTARIOS_IDX_FILENAME -> VOLUNTARIOS_IDX_FILE;
                     default -> null;
                 };
                 if (out != null) {

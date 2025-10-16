@@ -5,6 +5,7 @@ import br.com.mpet.persistence.dao.AnimalDataFileDao;
 import br.com.mpet.persistence.dao.AdotanteDataFileDao;
 import br.com.mpet.persistence.dao.OngDataFileDao;
 import br.com.mpet.persistence.dao.VoluntarioDataFileDao;
+import br.com.mpet.persistence.dao.AdocaoDataFileDao;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -39,6 +40,7 @@ public class Interface {
     private static final String ADOTANTES_IDX_FILENAME = "adotantes.dat.idx";
     private static final String VOLUNTARIOS_DATA_FILENAME = "voluntarios.dat";
     private static final String VOLUNTARIOS_IDX_FILENAME = "voluntarios.dat.idx";
+    private static final String ADOCOES_DATA_FILENAME = "adocoes.dat";
     private static final String ZIP_FILENAME = "backup.zip";
 
     private static final File ANIMAIS_DATA_FILE = new File(DATA_DIR, ANIMAIS_DATA_FILENAME);
@@ -50,6 +52,7 @@ public class Interface {
     private static final File ADOTANTES_IDX_FILE = new File(DATA_DIR, ADOTANTES_IDX_FILENAME);
     private static final File VOLUNTARIOS_DATA_FILE = new File(DATA_DIR, VOLUNTARIOS_DATA_FILENAME);
     private static final File VOLUNTARIOS_IDX_FILE = new File(DATA_DIR, VOLUNTARIOS_IDX_FILENAME);
+    private static final File ADOCOES_DATA_FILE = new File(DATA_DIR, ADOCOES_DATA_FILENAME);
     private static final byte VERSAO = 1;
 
     // --- Cores ANSI para o Console ---
@@ -75,7 +78,8 @@ public class Interface {
             AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
             OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
             AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
-            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO)
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO);
+            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO)
         ) {
             while (true) {
                 UsuarioLogado login = telaLogin(sc, adotanteDao, voluntarioDao);
@@ -84,7 +88,7 @@ public class Interface {
                     return;
                 }
                 switch (login.tipo) {
-                    case ADMIN -> menuAdmin(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
+                    case ADMIN -> menuAdmin(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao);
                     case ADOTANTE -> menuAdotanteLogado(sc, adotanteDao, animalDao, (Adotante) login.usuario);
                     case VOLUNTARIO -> menuVoluntarioLogado(sc, voluntarioDao, animalDao, (Voluntario) login.usuario);
                 }
@@ -153,7 +157,7 @@ public class Interface {
         }
     }
 
-    private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) throws IOException {
+    private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao) throws IOException {
         while (true) {
             System.out.println(ANSI_CYAN + ANSI_BOLD + "\n🐾 PetMatch - Painel do Admin 🐾" + ANSI_RESET);
             System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
@@ -161,6 +165,7 @@ public class Interface {
             System.out.println("2) Gerenciar ONGs");
             System.out.println("3) Gerenciar Adotantes");
             System.out.println("4) Gerenciar Voluntários");
+            System.out.println("6) Gerenciar Adoções (Adotante -> Animal)");
             System.out.println("5) Sistema (Backup/Restore/Vacuum)");
             System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
             System.out.print("Escolha uma opção: ");
@@ -170,11 +175,79 @@ public class Interface {
                 case "2" -> menuOngs(sc, ongDao, voluntarioDao);
                 case "3" -> menuAdotantes(sc, adotanteDao);
                 case "4" -> menuVoluntarios(sc, voluntarioDao);
-                case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
+                case "6" -> menuAdocoes(sc, adocaoDao, adotanteDao, animalDao);
+                case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao);
                 case "0" -> { return; }
                 default -> System.out.println(ANSI_RED + "Opção inválida. Tente novamente." + ANSI_RESET);
             }
         }
+    }
+
+    private static void menuAdocoes(Scanner sc, AdocaoDataFileDao adocaoDao, AdotanteDataFileDao adotanteDao, AnimalDataFileDao animalDao) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + "\n--- Gerenciar Adoções ---" + ANSI_RESET);
+            System.out.println("1) Registrar adoção (adotante -> animal)");
+            System.out.println("2) Listar todas adoções");
+            System.out.println("3) Remover adoção por ID");
+            System.out.println("4) Listar animais por CPF do adotante");
+            System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            switch (op) {
+                case "1" -> registrarAdocao(sc, adocaoDao, adotanteDao, animalDao);
+                case "2" -> listarAdocoes(adocaoDao);
+                case "3" -> removerAdocao(sc, adocaoDao);
+                case "4" -> listarAnimaisPorAdotante(sc, adocaoDao, animalDao);
+                case "0" -> { return; }
+                default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+            }
+        }
+    }
+
+    private static void registrarAdocao(Scanner sc, AdocaoDataFileDao adocaoDao, AdotanteDataFileDao adotanteDao, AnimalDataFileDao animalDao) throws IOException {
+        // Escolher adotante por CPF
+        List<Adotante> adotantes = adotanteDao.listAllActive();
+        if (adotantes.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem adotantes." + ANSI_RESET); return; }
+        adotantes.forEach(a -> System.out.printf(" - %s (%s)\n", a.getCpf(), a.getNomeCompleto()));
+        String cpf = perguntarString(sc, "CPF do adotante", null);
+        Optional<Adotante> optA = adotanteDao.read(cpf);
+        if (optA.isEmpty()) { System.out.println(ANSI_RED + "CPF inválido." + ANSI_RESET); return; }
+
+        // Escolher animal por ID (somente ativos)
+        List<Animal> animais = animalDao.listAllActive();
+        if (animais.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem animais." + ANSI_RESET); return; }
+        animais.forEach(Interface::imprimirAnimal);
+        int idAnimal = perguntarInt(sc, "ID do animal");
+        Optional<Animal> optAn = animalDao.read(idAnimal);
+        if (optAn.isEmpty()) { System.out.println(ANSI_RED + "Animal inválido." + ANSI_RESET); return; }
+
+        br.com.mpet.model.Adocao ad = new br.com.mpet.model.Adocao();
+        ad.setCpfAdotante(cpf);
+        ad.setIdAnimal(idAnimal);
+        ad.setDataAdocao(java.time.LocalDate.now());
+        ad.setAtivo(true);
+        adocaoDao.create(ad);
+        System.out.println(ANSI_GREEN + "Adoção registrada." + ANSI_RESET);
+    }
+
+    private static void listarAdocoes(AdocaoDataFileDao adocaoDao) throws IOException {
+        List<br.com.mpet.model.Adocao> list = adocaoDao.listAllActive();
+        if (list.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem adoções." + ANSI_RESET); return; }
+        list.forEach(a -> System.out.printf("[ADOCAO] id=%d, cpf=%s, animalId=%d, data=%s\n", a.getId(), a.getCpfAdotante(), a.getIdAnimal(), a.getDataAdocao()));
+    }
+
+    private static void removerAdocao(Scanner sc, AdocaoDataFileDao adocaoDao) throws IOException {
+        int id = perguntarInt(sc, "ID da adoção");
+        if (adocaoDao.delete(id)) System.out.println(ANSI_GREEN + "Adoção removida." + ANSI_RESET);
+        else System.out.println(ANSI_YELLOW + "Não encontrada." + ANSI_RESET);
+    }
+
+    private static void listarAnimaisPorAdotante(Scanner sc, AdocaoDataFileDao adocaoDao, AnimalDataFileDao animalDao) throws IOException {
+        String cpf = perguntarString(sc, "CPF do adotante", null);
+        List<br.com.mpet.model.Adocao> list = adocaoDao.listAllActive();
+        List<Integer> ids = list.stream().filter(a -> cpf.equals(a.getCpfAdotante())).map(br.com.mpet.model.Adocao::getIdAnimal).toList();
+        if (ids.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem adoções para este CPF." + ANSI_RESET); return; }
+        for (Integer id : ids) animalDao.read(id).ifPresent(Interface::imprimirAnimal);
     }
 
     // =================================================================================
@@ -297,6 +370,7 @@ public class Interface {
             System.out.println("3) Listar Todas as Ativas");
             System.out.println("4) Editar ONG");
             System.out.println("5) Remover ONG");
+        System.out.println("6) Listar animais por ONG");
             System.out.println(ANSI_RED + "0) Voltar ao Menu Principal" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
@@ -308,12 +382,21 @@ public class Interface {
                     case "3" -> listarOngs(dao);
                     case "4" -> editarOng(sc, dao, voluntarioDao);
                     case "5" -> removerOng(sc, dao);
+                    case "6" -> listarAnimaisPorOng(sc);
                     case "0" -> { return; }
                     default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
                 }
             } catch (Exception ex) {
                 System.out.println(ANSI_RED + "Erro: " + ex.getMessage() + ANSI_RESET);
             }
+        }
+    }
+
+    private static void listarAnimaisPorOng(Scanner sc) throws IOException {
+        try (AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO)) {
+            int id = perguntarInt(sc, "ID da ONG");
+            List<Animal> todos = animalDao.listAllActive();
+            todos.stream().filter(a -> a.getIdOng() == id).forEach(Interface::imprimirAnimal);
         }
     }
 
@@ -598,7 +681,7 @@ public class Interface {
     // =================================================================================
     // MENU SISTEMA
     // =================================================================================
-    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) {
+    private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao) {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Sistema ---" + ANSI_RESET);
             System.out.println("1) Fazer Backup (ZIP)");
@@ -618,6 +701,7 @@ public class Interface {
                             ongDao.close();
                             adotanteDao.close();
                             voluntarioDao.close();
+                            adocaoDao.close();
                             restoreZip();
                             System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
                             System.exit(0);
@@ -629,6 +713,7 @@ public class Interface {
                         ongDao.vacuum();
                         adotanteDao.vacuum();
                         voluntarioDao.vacuum();
+                        adocaoDao.vacuum();
                         System.out.println(ANSI_GREEN + "Compactação concluída. É recomendado reiniciar o programa." + ANSI_RESET);
                     }
                     case "0" -> { return; }
@@ -820,6 +905,7 @@ public class Interface {
             zipOne(zos, ADOTANTES_IDX_FILE, ADOTANTES_IDX_FILENAME);
             zipOne(zos, VOLUNTARIOS_DATA_FILE, VOLUNTARIOS_DATA_FILENAME);
             zipOne(zos, VOLUNTARIOS_IDX_FILE, VOLUNTARIOS_IDX_FILENAME);
+            zipOne(zos, ADOCOES_DATA_FILE, ADOCOES_DATA_FILENAME);
         }
         System.out.println(ANSI_GREEN + "Backup gerado com sucesso em: " + ZIP_FILE.getAbsolutePath() + ANSI_RESET);
         listZipContents(ZIP_FILE);
@@ -843,6 +929,7 @@ public class Interface {
                     case ADOTANTES_IDX_FILENAME -> ADOTANTES_IDX_FILE;
                     case VOLUNTARIOS_DATA_FILENAME -> VOLUNTARIOS_DATA_FILE;
                     case VOLUNTARIOS_IDX_FILENAME -> VOLUNTARIOS_IDX_FILE;
+                    case ADOCOES_DATA_FILENAME -> ADOCOES_DATA_FILE;
                     default -> null;
                 };
                 if (out != null) {

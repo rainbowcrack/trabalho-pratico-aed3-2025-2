@@ -1,5 +1,6 @@
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Interface.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Seed.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Adocao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Adotante.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Animal.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Cachorro.java
@@ -19,6 +20,7 @@
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Voluntario.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/BaseDataFile.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/CrudDao.java
+/home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AdocaoDataFileDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AdotanteDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AdotanteDataFileDao.java
 /home/pedrogaf/Secretária/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AnimalDao.java

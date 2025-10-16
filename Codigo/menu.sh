@@ -107,26 +107,25 @@ print_gradient_cool <<'EOF'
 EOF
 
 
-# roda o java
+# --- Compila e executa o projeto Java com Maven ---
 
-if ! command -v javac &> /dev/null # buraco negro linux
+# Verifica se o Maven está instalado
+if ! command -v mvn &> /dev/null
 then
-    echo "Erro: javac não encontrado. Instale o JDK para compilar."
+    echo -e "\e[31mErro: Maven (mvn) não encontrado. Por favor, instale o Maven para continuar.\e[0m"
     exit 1
 fi
 
-if ! command -v java &> /dev/null
-then
-    echo "Erro: java runtime não encontrado."
-    exit 1
-fi
-
-echo "Compilando interface.java..."
-javac Interface.java
+echo -e "\n\e[32mCompilando o projeto com Maven... (Isso pode levar um momento)\e[0m"
+# O -f aponta para o pom.xml no diretório atual, assumindo que o script está em Codigo/
+mvn clean package
 if [[ $? -ne 0 ]]; then
-    echo "Erro na compilação do arquivo interface.java"
+    echo -e "\e[31mErro na compilação do projeto com Maven. Verifique os erros acima.\e[0m"
     exit 1
 fi
 
-echo "Executando interface.java..."
-java interface
+echo -e "\n\e[32mCompilação concluída. Executando a aplicação PetMatch...\e[0m"
+# Executa a classe principal a partir dos arquivos compilados em target/classes
+java -cp target/classes br.com.mpet.Interface
+
+echo -e "\n\e[32mAplicação finalizada.\e[0m"

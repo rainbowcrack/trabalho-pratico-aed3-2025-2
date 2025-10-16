@@ -6,7 +6,7 @@ public class Ong {
     String cnpj;
     String endereco;
     String telefone;
-    int idResponsavel; // voluntário responsável
+    String cpfResponsavel; // CPF do voluntário responsável
     boolean ativo;
 
     public int getId() {
@@ -49,13 +49,8 @@ public class Ong {
         this.telefone = telefone;
     }
 
-    public int getIdResponsavel() {
-        return idResponsavel;
-    }
-
-    public void setIdResponsavel(int idResponsavel) {
-        this.idResponsavel = idResponsavel;
-    }
+    public String getCpfResponsavel() { return cpfResponsavel; }
+    public void setCpfResponsavel(String cpfResponsavel) { this.cpfResponsavel = cpfResponsavel; }
 
     public boolean isAtivo() {
         return ativo;

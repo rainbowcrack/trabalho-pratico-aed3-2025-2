@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -69,10 +70,6 @@ public class Interface {
             System.out.println(ANSI_RED + "Falha ao criar diretório de dados." + ANSI_RESET);
             return;
         }
-        executarMenuPrincipal();
-    }
-
-    private static void executarMenuPrincipal() {
         try (
             Scanner sc = new Scanner(System.in);
             AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
@@ -81,28 +78,15 @@ public class Interface {
             VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO)
         ) {
             while (true) {
-                System.out.println(ANSI_CYAN + ANSI_BOLD + "\n🐾 PetMatch - Menu Principal 🐾" + ANSI_RESET);
-                System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
-                System.out.println("1) Gerenciar Animais");
-                System.out.println("2) Gerenciar ONGs");
-                System.out.println("3) Gerenciar Adotantes");
-                System.out.println("4) Gerenciar Voluntários");
-                System.out.println("5) Sistema (Backup/Restore/Vacuum)");
-                System.out.println(ANSI_RED + "0) Sair" + ANSI_RESET);
-                System.out.print("Escolha uma opção: ");
-
-                String op = sc.nextLine().trim();
-                switch (op) {
-                    case "1" -> menuAnimais(sc, animalDao);
-                    case "2" -> menuOngs(sc, ongDao);
-                    case "3" -> menuAdotantes(sc, adotanteDao);
-                    case "4" -> menuVoluntarios(sc, voluntarioDao);
-                    case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
-                    case "0" -> {
-                        System.out.println(ANSI_PURPLE + "Obrigado por usar o PetMatch! Até logo!" + ANSI_RESET);
-                        return;
-                    }
-                    default -> System.out.println(ANSI_RED + "Opção inválida. Tente novamente." + ANSI_RESET);
+                UsuarioLogado login = telaLogin(sc, adotanteDao, voluntarioDao);
+                if (login == null) {
+                    System.out.println(ANSI_PURPLE + "Até logo!" + ANSI_RESET);
+                    return;
+                }
+                switch (login.tipo) {
+                    case ADMIN -> menuAdmin(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
+                    case ADOTANTE -> menuAdotanteLogado(sc, adotanteDao, animalDao, (Adotante) login.usuario);
+                    case VOLUNTARIO -> menuVoluntarioLogado(sc, voluntarioDao, animalDao, (Voluntario) login.usuario);
                 }
             }
         } catch (Exception e) {
@@ -111,10 +95,70 @@ public class Interface {
         }
     }
 
+    private enum TipoSessao { ADMIN, ADOTANTE, VOLUNTARIO }
+    private record UsuarioLogado(TipoSessao tipo, Usuario usuario) {}
+
+    private static UsuarioLogado telaLogin(Scanner sc, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) throws IOException {
+        System.out.println("\n" + ANSI_BOLD + ANSI_CYAN + "══════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_BOLD + ANSI_CYAN + "            🐾 PetMatch - Login 🐾           " + ANSI_RESET);
+        System.out.println(ANSI_BOLD + ANSI_CYAN + "══════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "Dica: Admin = (admin / admin). Demais: use CPF e senha cadastrados." + ANSI_RESET);
+        System.out.print("Usuário: ");
+        String usuario = sc.nextLine().trim();
+        if (usuario.equals("0")) return null;
+        System.out.print("Senha: ");
+        String senha = sc.nextLine().trim();
+
+        // Admin padrão
+        if ("admin".equalsIgnoreCase(usuario) && "admin".equals(senha)) {
+            System.out.println(ANSI_GREEN + "Bem-vindo, administrador!" + ANSI_RESET);
+            return new UsuarioLogado(TipoSessao.ADMIN, null);
+        }
+
+        // Autenticação por CPF
+        Optional<Adotante> a = adotanteDao.read(usuario);
+        if (a.isPresent() && a.get().isAtivo() && Objects.equals(a.get().getSenha(), senha)) {
+            System.out.println(ANSI_GREEN + "Login como Adotante bem-sucedido." + ANSI_RESET);
+            return new UsuarioLogado(TipoSessao.ADOTANTE, a.get());
+        }
+        Optional<Voluntario> v = voluntarioDao.read(usuario);
+        if (v.isPresent() && v.get().isAtivo() && Objects.equals(v.get().getSenha(), senha)) {
+            System.out.println(ANSI_GREEN + "Login como Voluntário bem-sucedido." + ANSI_RESET);
+            return new UsuarioLogado(TipoSessao.VOLUNTARIO, v.get());
+        }
+
+        System.out.println(ANSI_RED + "Usuário não encontrado ou senha incorreta. (Digite 0 como usuário para sair)" + ANSI_RESET);
+        return telaLogin(sc, adotanteDao, voluntarioDao);
+    }
+
+    private static void menuAdmin(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + ANSI_BOLD + "\n🐾 PetMatch - Painel do Admin 🐾" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
+            System.out.println("1) Gerenciar Animais");
+            System.out.println("2) Gerenciar ONGs");
+            System.out.println("3) Gerenciar Adotantes");
+            System.out.println("4) Gerenciar Voluntários");
+            System.out.println("5) Sistema (Backup/Restore/Vacuum)");
+            System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
+            System.out.print("Escolha uma opção: ");
+            String op = sc.nextLine().trim();
+                switch (op) {
+                case "1" -> menuAnimais(sc, animalDao, ongDao);
+                case "2" -> menuOngs(sc, ongDao, voluntarioDao);
+                case "3" -> menuAdotantes(sc, adotanteDao);
+                case "4" -> menuVoluntarios(sc, voluntarioDao);
+                case "5" -> menuSistema(sc, animalDao, ongDao, adotanteDao, voluntarioDao);
+                case "0" -> { return; }
+                default -> System.out.println(ANSI_RED + "Opção inválida. Tente novamente." + ANSI_RESET);
+            }
+        }
+    }
+
     // =================================================================================
     // MENU ANIMAIS
     // =================================================================================
-    private static void menuAnimais(Scanner sc, AnimalDataFileDao dao) throws IOException {
+    private static void menuAnimais(Scanner sc, AnimalDataFileDao dao, OngDataFileDao ongDao) throws IOException {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Gerenciar Animais ---" + ANSI_RESET);
             System.out.println("1) Criar Animal (Cachorro/Gato)");
@@ -128,10 +172,10 @@ public class Interface {
 
             try {
                 switch (op) {
-                    case "1" -> criarAnimal(sc, dao);
+                    case "1" -> criarAnimal(sc, dao, ongDao);
                     case "2" -> lerAnimal(sc, dao);
                     case "3" -> listarAnimais(dao);
-                    case "4" -> editarAnimal(sc, dao);
+                    case "4" -> editarAnimal(sc, dao, ongDao);
                     case "5" -> removerAnimal(sc, dao);
                     case "0" -> { return; }
                     default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
@@ -142,13 +186,16 @@ public class Interface {
         }
     }
 
-    private static void criarAnimal(Scanner sc, AnimalDataFileDao dao) throws IOException {
+    private static void criarAnimal(Scanner sc, AnimalDataFileDao dao, OngDataFileDao ongDao) throws IOException {
         System.out.print("Tipo (C=cachorro, G=gato): ");
         String t = sc.nextLine().trim().toUpperCase();
         Animal a;
         if (t.equals("C")) a = new Cachorro(); else if (t.equals("G")) a = new Gato(); else { System.out.println(ANSI_RED + "Tipo inválido." + ANSI_RESET); return; }
 
-        preencherBasicoAnimal(sc, a);
+        Integer idOng = escolherOng(sc, ongDao);
+        if (idOng == null) { System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET); return; }
+
+        preencherBasicoAnimal(sc, a, idOng);
 
         if (a instanceof Cachorro c) {
             System.out.print("Raça: "); c.setRaca(sc.nextLine().trim());
@@ -184,7 +231,7 @@ public class Interface {
         System.out.println(ANSI_YELLOW + "---------------------------------" + ANSI_RESET);
     }
 
-    private static void editarAnimal(Scanner sc, AnimalDataFileDao dao) throws IOException {
+    private static void editarAnimal(Scanner sc, AnimalDataFileDao dao, OngDataFileDao ongDao) throws IOException {
         int id = perguntarInt(sc, "ID do animal a editar: ");
         Optional<Animal> opt = dao.read(id);
         if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "Animal não encontrado." + ANSI_RESET); return; }
@@ -202,6 +249,11 @@ public class Interface {
             g.setRaca(perguntarString(sc, "Raça", g.getRaca()));
         }
 
+        if (perguntarBool(sc, "Deseja trocar a ONG? (s/n): ")) {
+            Integer novoIdOng = escolherOng(sc, ongDao);
+            if (novoIdOng != null) a.setIdOng(novoIdOng);
+        }
+
         boolean ok = dao.update(a);
         System.out.println(ok ? ANSI_GREEN + "Atualizado com sucesso." + ANSI_RESET : ANSI_RED + "Falha ao atualizar." + ANSI_RESET);
     }
@@ -215,7 +267,7 @@ public class Interface {
     // =================================================================================
     // MENU ONGS
     // =================================================================================
-    private static void menuOngs(Scanner sc, OngDataFileDao dao) throws IOException {
+    private static void menuOngs(Scanner sc, OngDataFileDao dao, VoluntarioDataFileDao voluntarioDao) throws IOException {
          while (true) {
             System.out.println(ANSI_CYAN + "\n--- Gerenciar ONGs ---" + ANSI_RESET);
             System.out.println("1) Criar ONG");
@@ -229,10 +281,10 @@ public class Interface {
 
             try {
                 switch (op) {
-                    case "1" -> criarOng(sc, dao);
+                    case "1" -> criarOng(sc, dao, voluntarioDao);
                     case "2" -> lerOng(sc, dao);
                     case "3" -> listarOngs(dao);
-                    case "4" -> editarOng(sc, dao);
+                    case "4" -> editarOng(sc, dao, voluntarioDao);
                     case "5" -> removerOng(sc, dao);
                     case "0" -> { return; }
                     default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
@@ -243,14 +295,15 @@ public class Interface {
         }
     }
 
-    private static void criarOng(Scanner sc, OngDataFileDao dao) throws IOException {
+    private static void criarOng(Scanner sc, OngDataFileDao dao, VoluntarioDataFileDao voluntarioDao) throws IOException {
         System.out.println(ANSI_BLUE + "--- Cadastro de Nova ONG ---" + ANSI_RESET);
         Ong ong = new Ong();
         ong.setNome(perguntarString(sc, "Nome da ONG", null));
         ong.setCnpj(perguntarString(sc, "CNPJ", null));
         ong.setEndereco(perguntarString(sc, "Endereço", null));
         ong.setTelefone(perguntarString(sc, "Telefone", null));
-        ong.setIdResponsavel(perguntarInt(sc, "ID do Voluntário Responsável"));
+        // Responsável agora por CPF; admin escolhe de uma lista (opcional)
+        ong.setCpfResponsavel(escolherVoluntarioCpf(sc, voluntarioDao));
         ong.setAtivo(true);
 
         Ong salva = dao.create(ong);
@@ -272,7 +325,7 @@ public class Interface {
         System.out.println(ANSI_YELLOW + "----------------------------" + ANSI_RESET);
     }
 
-    private static void editarOng(Scanner sc, OngDataFileDao dao) throws IOException {
+    private static void editarOng(Scanner sc, OngDataFileDao dao, VoluntarioDataFileDao voluntarioDao) throws IOException {
         int id = perguntarInt(sc, "ID da ONG a editar: ");
         Optional<Ong> opt = dao.read(id);
         if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "ONG não encontrada." + ANSI_RESET); return; }
@@ -285,7 +338,9 @@ public class Interface {
         ong.setCnpj(perguntarString(sc, "CNPJ", ong.getCnpj()));
         ong.setEndereco(perguntarString(sc, "Endereço", ong.getEndereco()));
         ong.setTelefone(perguntarString(sc, "Telefone", ong.getTelefone()));
-        ong.setIdResponsavel(perguntarInt(sc, "ID do Responsável", ong.getIdResponsavel()));
+        if (perguntarBool(sc, "Trocar responsável? (s/n): ")) {
+            ong.setCpfResponsavel(escolherVoluntarioCpf(sc, voluntarioDao));
+        }
 
         boolean ok = dao.update(ong);
         System.out.println(ok ? ANSI_GREEN + "ONG atualizada com sucesso." + ANSI_RESET : ANSI_RED + "Falha ao atualizar." + ANSI_RESET);
@@ -298,32 +353,223 @@ public class Interface {
     }
 
     // =================================================================================
-    // MENU ADOTANTES E VOLUNTÁRIOS (STUBS)
+    // MENU ADOTANTES E VOLUNTÁRIOS
     // =================================================================================
-    private static void menuAdotantes(Scanner sc, AdotanteDataFileDao dao) {
-        System.out.println(ANSI_YELLOW + "\n--- Gerenciar Adotantes (Não implementado) ---" + ANSI_RESET);
-        System.out.println("1) Criar Adotante");
-        System.out.println("2) Ler Adotante por CPF");
-        System.out.println("3) Listar Todos");
-        System.out.println("4) Editar Adotante");
-        System.out.println("5) Remover Adotante");
-        System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
-        System.out.print("Escolha: ");
-        sc.nextLine(); // Consome a linha para o menu não implementado
-        System.out.println(ANSI_RED + "Funcionalidade ainda não implementada." + ANSI_RESET);
+    private static void menuAdotantes(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + "\n--- Gerenciar Adotantes ---" + ANSI_RESET);
+            System.out.println("1) Criar Adotante");
+            System.out.println("2) Ler por CPF");
+            System.out.println("3) Listar Todos");
+            System.out.println("4) Editar Adotante");
+            System.out.println("5) Remover Adotante");
+            System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            try {
+                switch (op) {
+                    case "1" -> criarAdotante(sc, dao);
+                    case "2" -> lerAdotante(sc, dao);
+                    case "3" -> listarAdotantes(dao);
+                    case "4" -> editarAdotante(sc, dao);
+                    case "5" -> removerAdotante(sc, dao);
+                    case "0" -> { return; }
+                    default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+                }
+            } catch (Exception ex) {
+                System.out.println(ANSI_RED + "Erro: " + ex.getMessage() + ANSI_RESET);
+            }
+        }
     }
 
-    private static void menuVoluntarios(Scanner sc, VoluntarioDataFileDao dao) {
-        System.out.println(ANSI_YELLOW + "\n--- Gerenciar Voluntários (Não implementado) ---" + ANSI_RESET);
-        System.out.println("1) Criar Voluntário");
-        System.out.println("2) Ler Voluntário por CPF");
-        System.out.println("3) Listar Todos");
-        System.out.println("4) Editar Voluntário");
-        System.out.println("5) Remover Voluntário");
-        System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
-        System.out.print("Escolha: ");
-        sc.nextLine(); // Consome a linha para o menu não implementado
-        System.out.println(ANSI_RED + "Funcionalidade ainda não implementada." + ANSI_RESET);
+    private static void menuVoluntarios(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + "\n--- Gerenciar Voluntários ---" + ANSI_RESET);
+            System.out.println("1) Criar Voluntário");
+            System.out.println("2) Ler por CPF");
+            System.out.println("3) Listar Todos");
+            System.out.println("4) Editar Voluntário");
+            System.out.println("5) Remover Voluntário");
+            System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            try {
+                switch (op) {
+                    case "1" -> criarVoluntario(sc, dao);
+                    case "2" -> lerVoluntario(sc, dao);
+                    case "3" -> listarVoluntarios(dao);
+                    case "4" -> editarVoluntario(sc, dao);
+                    case "5" -> removerVoluntario(sc, dao);
+                    case "0" -> { return; }
+                    default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+                }
+            } catch (Exception ex) {
+                System.out.println(ANSI_RED + "Erro: " + ex.getMessage() + ANSI_RESET);
+            }
+        }
+    }
+
+    // =================================================================================
+    // PAINÉIS DE USUÁRIOS LOGADOS
+    // =================================================================================
+    private static void menuAdotanteLogado(Scanner sc, AdotanteDataFileDao adotanteDao, AnimalDataFileDao animalDao, Adotante a) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + "\n--- Painel do Adotante ---" + ANSI_RESET);
+            System.out.println("1) Ver meus dados");
+            System.out.println("2) Editar meus dados básicos");
+            System.out.println("3) Listar animais disponíveis");
+            System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            switch (op) {
+                case "1" -> imprimirAdotante(a);
+                case "2" -> {
+                    a.setTelefone(perguntarString(sc, "Telefone", a.getTelefone()));
+                    a.setSenha(perguntarString(sc, "Senha", a.getSenha()));
+                    adotanteDao.update(a);
+                    System.out.println(ANSI_GREEN + "Dados atualizados." + ANSI_RESET);
+                }
+                case "3" -> listarAnimais(animalDao);
+                case "0" -> { return; }
+                default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+            }
+        }
+    }
+
+    private static void menuVoluntarioLogado(Scanner sc, VoluntarioDataFileDao voluntarioDao, AnimalDataFileDao animalDao, Voluntario v) throws IOException {
+        while (true) {
+            System.out.println(ANSI_CYAN + "\n--- Painel do Voluntário ---" + ANSI_RESET);
+            System.out.println("1) Ver meus dados");
+            System.out.println("2) Editar meus dados básicos");
+            System.out.println("3) Listar animais da ONG " + v.getIdOng());
+            System.out.println(ANSI_RED + "0) Logout" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            switch (op) {
+                case "1" -> imprimirVoluntario(v);
+                case "2" -> {
+                    v.setTelefone(perguntarString(sc, "Telefone", v.getTelefone()));
+                    v.setSenha(perguntarString(sc, "Senha", v.getSenha()));
+                    voluntarioDao.update(v);
+                    System.out.println(ANSI_GREEN + "Dados atualizados." + ANSI_RESET);
+                }
+                case "3" -> {
+                    List<Animal> todos = animalDao.listAllActive();
+                    todos.stream().filter(an -> an.getIdOng() == v.getIdOng()).forEach(Interface::imprimirAnimal);
+                }
+                case "0" -> { return; }
+                default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+            }
+        }
+    }
+
+    private static void criarAdotante(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        Adotante a = new Adotante();
+        preencherBasicoUsuario(sc, a);
+        a.setNomeCompleto(perguntarString(sc, "Nome completo", null));
+        a.setDataNascimento(perguntarData(sc, "Data nascimento (yyyy-mm-dd) ou enter"));
+        a.setTipoMoradia(perguntarEnum(sc, "Tipo Moradia (CASA_COM_QUINTAL_MURADO/CASA_SEM_QUINTAL/APARTAMENTO)", TipoMoradia.class, TipoMoradia.APARTAMENTO));
+        a.setPossuiTelaProtetora(perguntarBool(sc, "Possui tela protetora? (s/n): "));
+        a.setPossuiOutrosAnimais(perguntarBool(sc, "Possui outros animais? (s/n): "));
+        a.setDescOutrosAnimais(perguntarString(sc, "Descrição outros animais", null));
+        a.setHorasForaDeCasa(perguntarInt(sc, "Horas fora de casa/dia", 8));
+        a.setComposicaoFamiliar(perguntarEnum(sc, "Composição Familiar (PESSOA_SOZINHA/CASAL_SEM_FILHOS/FAMILIA_COM_CRIANCAS)", ComposicaoFamiliar.class, ComposicaoFamiliar.PESSOA_SOZINHA));
+        a.setViagensFrequentes(perguntarBool(sc, "Viagens frequentes? (s/n): "));
+        a.setDescViagensFrequentes(perguntarString(sc, "Descrição viagens (opcional)", null));
+        a.setJaTevePets(perguntarBool(sc, "Já teve pets? (s/n): "));
+        a.setExperienciaComPets(perguntarString(sc, "Experiência com pets (opcional)", null));
+        a.setMotivoAdocao(perguntarString(sc, "Motivo da adoção", null));
+        a.setCientePossuiResponsavel(perguntarBool(sc, "Ciente que precisa de responsável? (s/n): "));
+        a.setCienteCustos(perguntarBool(sc, "Ciente dos custos? (s/n): "));
+        dao.create(a);
+        System.out.println(ANSI_GREEN + "Adotante criado." + ANSI_RESET);
+    }
+
+    private static void lerAdotante(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF (somente números)", null);
+        Optional<Adotante> opt = dao.read(cpf);
+        if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET); return; }
+        imprimirAdotante(opt.get());
+    }
+
+    private static void listarAdotantes(AdotanteDataFileDao dao) throws IOException {
+        List<Adotante> list = dao.listAllActive();
+        if (list.isEmpty()) { System.out.println(ANSI_YELLOW + "Nenhum adotante." + ANSI_RESET); return; }
+        list.forEach(Interface::imprimirAdotante);
+    }
+
+    private static void editarAdotante(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF do adotante", null);
+        Optional<Adotante> opt = dao.read(cpf);
+        if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET); return; }
+        Adotante a = opt.get();
+        a.setTelefone(perguntarString(sc, "Telefone", a.getTelefone()));
+        a.setSenha(perguntarString(sc, "Senha", a.getSenha()));
+        a.setNomeCompleto(perguntarString(sc, "Nome completo", a.getNomeCompleto()));
+        a.setMotivoAdocao(perguntarString(sc, "Motivo da adoção", a.getMotivoAdocao()));
+        dao.update(a);
+        System.out.println(ANSI_GREEN + "Atualizado." + ANSI_RESET);
+    }
+
+    private static void removerAdotante(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF do adotante", null);
+        if (dao.delete(cpf)) System.out.println(ANSI_GREEN + "Removido." + ANSI_RESET);
+        else System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET);
+    }
+
+    private static void criarVoluntario(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        Voluntario v = new Voluntario();
+        preencherBasicoUsuario(sc, v);
+        v.setNome(perguntarString(sc, "Nome", null));
+        v.setEndereco(perguntarString(sc, "Endereço", null));
+        // Seleciona ONG existente por lista (se disponível)
+        try (OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO)) {
+            Integer idOng = escolherOng(sc, ongDao);
+            v.setIdOng(idOng == null ? 0 : idOng);
+        }
+        v.setCargo(perguntarEnum(sc, "Cargo (TRIAGEM/LOGISTICA/ATENDIMENTO/VETERINARIO/ADMIN)", Role.class, Role.ATENDIMENTO));
+        dao.create(v);
+        System.out.println(ANSI_GREEN + "Voluntário criado." + ANSI_RESET);
+    }
+
+    private static void lerVoluntario(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF (somente números)", null);
+        Optional<Voluntario> opt = dao.read(cpf);
+        if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET); return; }
+        imprimirVoluntario(opt.get());
+    }
+
+    private static void listarVoluntarios(VoluntarioDataFileDao dao) throws IOException {
+        List<Voluntario> list = dao.listAllActive();
+        if (list.isEmpty()) { System.out.println(ANSI_YELLOW + "Nenhum voluntário." + ANSI_RESET); return; }
+        list.forEach(Interface::imprimirVoluntario);
+    }
+
+    private static void editarVoluntario(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF do voluntário", null);
+        Optional<Voluntario> opt = dao.read(cpf);
+        if (opt.isEmpty()) { System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET); return; }
+        Voluntario v = opt.get();
+        v.setTelefone(perguntarString(sc, "Telefone", v.getTelefone()));
+        v.setSenha(perguntarString(sc, "Senha", v.getSenha()));
+        v.setNome(perguntarString(sc, "Nome", v.getNome()));
+        v.setEndereco(perguntarString(sc, "Endereço", v.getEndereco()));
+        // permitir trocar ONG
+        try (OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO)) {
+            if (perguntarBool(sc, "Trocar ONG? (s/n): ")) {
+                Integer idOng = escolherOng(sc, ongDao);
+                if (idOng != null) v.setIdOng(idOng);
+            }
+        }
+        v.setCargo(perguntarEnum(sc, "Cargo", Role.class, v.getCargo()==null?Role.ATENDIMENTO:v.getCargo()));
+        dao.update(v);
+        System.out.println(ANSI_GREEN + "Atualizado." + ANSI_RESET);
+    }
+
+    private static void removerVoluntario(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        String cpf = perguntarString(sc, "CPF do voluntário", null);
+        if (dao.delete(cpf)) System.out.println(ANSI_GREEN + "Removido." + ANSI_RESET);
+        else System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET);
     }
 
 
@@ -375,10 +621,10 @@ public class Interface {
     // =================================================================================
     // HELPERS DE ENTRADA DE DADOS
     // =================================================================================
-    private static void preencherBasicoAnimal(Scanner sc, Animal a) {
+    private static void preencherBasicoAnimal(Scanner sc, Animal a, int idOng) {
         a.setAtivo(true);
         a.setNome(perguntarString(sc, "Nome", null));
-        a.setIdOng(perguntarInt(sc, "ID da ONG"));
+        a.setIdOng(idOng);
         a.setPorte(perguntarEnum(sc, "Porte (PEQUENO/MEDIO/GRANDE)", Porte.class, Porte.MEDIO));
         a.setSexo(perguntarChar(sc, "Sexo (M/F/U)", 'U'));
         a.setDataNascimentoAprox(perguntarData(sc, "Data de nascimento aprox (yyyy-mm-dd) ou enter"));
@@ -478,8 +724,64 @@ public class Interface {
     private static void imprimirOng(Ong ong) {
         System.out.printf(ANSI_BOLD + "[ONG] ID=%d, Nome=%s, CNPJ=%s, Ativo=%s\n" + ANSI_RESET,
                 ong.getId(), ong.getNome(), ong.getCnpj(), ong.isAtivo());
-        System.out.printf("  > Endereço: %s, Telefone: %s, Responsável ID: %d\n",
-                ong.getEndereco(), ong.getTelefone(), ong.getIdResponsavel());
+        System.out.printf("  > Endereço: %s, Telefone: %s, Responsável CPF: %s\n",
+                ong.getEndereco(), ong.getTelefone(), ong.getCpfResponsavel());
+    }
+
+    // Seleção de ONG existente para vincular animais e voluntários
+    private static Integer escolherOng(Scanner sc, OngDataFileDao ongDao) throws IOException {
+        List<Ong> ongs = ongDao.listAllActive();
+        if (ongs.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "Não há ONGs cadastradas." + ANSI_RESET);
+            return null;
+        }
+        System.out.println(ANSI_CYAN + "ONGs disponíveis:" + ANSI_RESET);
+        ongs.forEach(o -> System.out.printf(" - ID=%d | %s\n", o.getId(), o.getNome()));
+        int id = perguntarInt(sc, "Escolha o ID da ONG");
+        Optional<Ong> opt = ongDao.read(id);
+        if (opt.isEmpty() || !opt.get().isAtivo()) {
+            System.out.println(ANSI_RED + "ONG inválida." + ANSI_RESET);
+            return null;
+        }
+        return id;
+    }
+
+    private static String escolherVoluntarioCpf(Scanner sc, VoluntarioDataFileDao voluntarioDao) throws IOException {
+        List<Voluntario> vols = voluntarioDao.listAllActive();
+        if (vols.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "Não há voluntários cadastrados." + ANSI_RESET);
+            return null;
+        }
+        System.out.println(ANSI_CYAN + "Voluntários disponíveis (CPF - Nome):" + ANSI_RESET);
+        vols.forEach(v -> System.out.printf(" - %s - %s\n", v.getCpf(), v.getNome()));
+        String cpf = perguntarString(sc, "Informe o CPF do responsável (vazio para nenhum)", null);
+        if (cpf == null || cpf.isBlank()) return null;
+        Optional<Voluntario> v = voluntarioDao.read(cpf);
+        if (v.isEmpty() || !v.get().isAtivo()) {
+            System.out.println(ANSI_RED + "CPF inválido." + ANSI_RESET);
+            return null;
+        }
+        return cpf;
+    }
+
+    private static void preencherBasicoUsuario(Scanner sc, Usuario u) {
+    u.setAtivo(true);
+    u.setCpf(perguntarString(sc, "CPF (somente números)", null));
+    u.setSenha(perguntarString(sc, "Senha", null));
+    u.setTelefone(perguntarString(sc, "Telefone", null));
+    }
+
+    private static void imprimirAdotante(Adotante a) {
+    System.out.printf(ANSI_BOLD + "[ADOTANTE] CPF=%s, Nome=%s, Ativo=%s\n" + ANSI_RESET,
+        a.getCpf(), a.getNomeCompleto(), a.isAtivo());
+    System.out.printf("  > Tel: %s, Senha: %s, Moradia: %s, Outros animais: %s, Motivo: %s\n",
+        a.getTelefone(), a.getSenha(), a.getTipoMoradia(), a.isPossuiOutrosAnimais(), a.getMotivoAdocao());
+    }
+
+    private static void imprimirVoluntario(Voluntario v) {
+    System.out.printf(ANSI_BOLD + "[VOLUNTÁRIO] CPF=%s, Nome=%s, ONG=%d, Cargo=%s, Ativo=%s\n" + ANSI_RESET,
+        v.getCpf(), v.getNome(), v.getIdOng(), v.getCargo(), v.isAtivo());
+    System.out.printf("  > Tel: %s, Senha: %s, Endereço: %s\n", v.getTelefone(), v.getSenha(), v.getEndereco());
     }
 
     // =================================================================================

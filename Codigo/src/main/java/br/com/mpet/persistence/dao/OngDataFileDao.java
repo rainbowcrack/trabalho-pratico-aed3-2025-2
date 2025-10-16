@@ -244,13 +244,13 @@ public class OngDataFileDao extends BaseDataFile<Ong> implements CrudDao<Ong, In
     }
 
     private byte[] encodeOng(Ong ong) {
-        return Codec.concat(
-                Codec.encodeStringU16(ong.getNome()),
-                Codec.encodeStringU16(ong.getCnpj()),
-                Codec.encodeStringU16(ong.getEndereco()),
-                Codec.encodeStringU16(ong.getTelefone()),
-                Codec.encodeInt(ong.getIdResponsavel())
-        );
+    return Codec.concat(
+        Codec.encodeStringU16(ong.getNome()),
+        Codec.encodeStringU16(ong.getCnpj()),
+        Codec.encodeStringU16(ong.getEndereco()),
+        Codec.encodeStringU16(ong.getTelefone()),
+        Codec.encodeStringU16(ong.getCpfResponsavel())
+    );
     }
 
     private Ong decodeOng(int id, byte tomb, byte[] buf) {
@@ -259,7 +259,7 @@ public class OngDataFileDao extends BaseDataFile<Ong> implements CrudDao<Ong, In
         Codec.Decoded<String> dCnpj = Codec.decodeStringU16(buf, off); off = dCnpj.nextOffset;
         Codec.Decoded<String> dEndereco = Codec.decodeStringU16(buf, off); off = dEndereco.nextOffset;
         Codec.Decoded<String> dTelefone = Codec.decodeStringU16(buf, off); off = dTelefone.nextOffset;
-        Codec.Decoded<Integer> dIdResponsavel = Codec.decodeInt(buf, off);
+    Codec.Decoded<String> dCpfResp = Codec.decodeStringU16(buf, off);
 
         Ong ong = new Ong();
         ong.setId(id);
@@ -268,7 +268,7 @@ public class OngDataFileDao extends BaseDataFile<Ong> implements CrudDao<Ong, In
         ong.setCnpj(dCnpj.value);
         ong.setEndereco(dEndereco.value);
         ong.setTelefone(dTelefone.value);
-        ong.setIdResponsavel(dIdResponsavel.value);
+        ong.setCpfResponsavel(dCpfResp.value);
         return ong;
     }
 

@@ -6,7 +6,8 @@ import br.com.mpet.model.Gato;
 import br.com.mpet.model.Porte;
 import br.com.mpet.model.NivelAdestramento;
 import br.com.mpet.persistence.io.Codec;
-import br.com.mpet.persistence.index.BPlusTreeIndex;
+import br.com.mpet.persistence.index.ArvoreElemento;
+import br.com.mpet.persistence.index.BTree;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,13 +66,17 @@ public class AnimalDataFileDao extends AnimalDao {
 
     // Índice primário (id -> offset) usando B+ simplificado em arquivo .idx
     private final Map<Integer, Long> indexById = new HashMap<>(); // cache em memória
-    private final BPlusTreeIndex<Integer, Long> bplus;
+    private BTree<ArvoreElemento> bplus;
 
     public AnimalDataFileDao(File file, byte versaoFormato) throws IOException {
         super(file, versaoFormato);
         // Arquivo de índice B+ (mesmo nome + .idx)
         File idxFile = new File(file.getParentFile(), file.getName() + ".idx");
-        this.bplus = new BPlusTreeIndex<>(idxFile, versaoFormato, 64);
+        try {
+            this.bplus = new BTree<>(ArvoreElemento.class.getConstructor(), 4, idxFile.getPath());
+        } catch (NoSuchMethodException e) {
+            throw new IOException("Falha ao inicializar o índice BTree: construtor não encontrado.", e);
+        }
         rebuildIfEmpty();
     }
 
@@ -100,7 +105,11 @@ public class AnimalDataFileDao extends AnimalDao {
         long offset = appendRecord(full);
 
         indexById.put(entity.getId(), offset);
-        bplus.put(entity.getId(), offset);
+        try {
+            bplus.create(new ArvoreElemento(entity.getId(), offset));
+        } catch (Exception e) {
+            throw new IOException("Erro ao inserir no índice B+", e);
+        }
         incrementCountAtivos();
         return entity;
     }
@@ -115,9 +124,12 @@ public class AnimalDataFileDao extends AnimalDao {
         Long off = indexById.get(id);
         if (off == null) {
             // fallback para índice B+
-            off = bplus.get(id);
-            if (off != null) indexById.put(id, off);
+            try {
+                ArvoreElemento el = bplus.read(id);
+                if (el != null) off = el.getAddress();
+            } catch (Exception e) { /* ignora */ }
         }
+        if (off != null) indexById.put(id, off);
         if (off == null) return Optional.empty();
         Animal a = readAtOffset(off);
         return Optional.ofNullable(a);
@@ -156,7 +168,11 @@ public class AnimalDataFileDao extends AnimalDao {
             byte[] full = montarRegistro(tipo, (byte)0, entity.getId(), newPayload);
             long newOff = appendRecord(full);
             indexById.put(entity.getId(), newOff);
-            bplus.put(entity.getId(), newOff);
+            try {
+                bplus.update(entity.getId(), newOff);
+            } catch (Exception e) {
+                throw new IOException("Erro ao atualizar no índice B+", e);
+            }
             incrementCountAtivos();
             return true;
         }
@@ -179,7 +195,11 @@ public class AnimalDataFileDao extends AnimalDao {
             decrementCountAtivos();
         }
         indexById.remove(id);
-        bplus.remove(id);
+        try {
+            bplus.delete(id);
+        } catch (Exception e) {
+            throw new IOException("Erro ao deletar no índice B+", e);
+        }
         return true;
     }
 
@@ -214,6 +234,19 @@ public class AnimalDataFileDao extends AnimalDao {
     public synchronized void rebuildIfEmpty() throws IOException {
         if (!indexById.isEmpty()) return;
         indexById.clear();
+
+        // Limpa o arquivo de índice B+ para reconstrução
+        bplus.close();
+        File idxFile = new File(file.getParentFile(), file.getName() + ".idx");
+        if (idxFile.exists()) {
+            idxFile.delete();
+        }
+        try {
+            this.bplus = new BTree<>(ArvoreElemento.class.getConstructor(), 4, idxFile.getPath());
+        } catch (NoSuchMethodException e) {
+            throw new IOException("Falha ao reinicializar o índice BTree: construtor não encontrado.", e);
+        }
+
         int ativos = 0;
         long len = raf.length();
         long pos = br.com.mpet.persistence.io.FileHeaderHelper.HEADER_SIZE;
@@ -228,7 +261,11 @@ public class AnimalDataFileDao extends AnimalDao {
             if (tomb == 0) {
                 indexById.put(id, pos);
                 // Atualiza índice B+
-                bplus.put(id, pos);
+                try {
+                    bplus.create(new ArvoreElemento(id, pos));
+                } catch (Exception e) {
+                    throw new IOException("Erro ao reconstruir índice B+", e);
+                }
                 ativos++;
             }
             pos += REC_POS_PAYLOAD + payloadLen;

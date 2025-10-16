@@ -27,7 +27,9 @@
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/VoluntarioDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/VoluntarioDataFileDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/ArvoreElemento.java
-/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/BPlusTreeIndex.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/BTree.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/Pagina.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/Par.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/RegistroArvoreBMais.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/io/Codec.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/io/FileHeaderHelper.java

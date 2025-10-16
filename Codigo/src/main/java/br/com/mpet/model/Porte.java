@@ -8,4 +8,5 @@ public enum Porte {
     MEDIO,
     GRANDE
 }
+// COLOQUE COMO STRING NA TABELA ANU
 

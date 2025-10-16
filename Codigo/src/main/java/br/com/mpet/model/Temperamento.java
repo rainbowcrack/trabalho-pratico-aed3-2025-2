@@ -11,3 +11,4 @@ public enum Temperamento {
     DOCIL,
     INDEPENDENTE
 }
+// TIRAR E COLOCAR NA DESCRICAO

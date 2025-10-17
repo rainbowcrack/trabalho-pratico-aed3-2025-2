@@ -622,7 +622,7 @@ public class Interface {
                 case "6" -> removerAnimalVoluntario(sc, animalDao, v.getIdOng());
                 case "7" -> listarInteressadosPorAnimal(sc, v.getIdOng(), animalDao, interesseDao);
                 case "8" -> aprovarMatchAbrirChat(sc, v.getIdOng(), animalDao, interesseDao, chatThreadDao);
-                case "9" -> chatsListarEEnviar(sc, v.getIdOng(), chatThreadDao, chatMsgDao);
+                case "9" -> chatsListarEEnviar(sc, v, animalDao, chatThreadDao, chatMsgDao);
                 case "10" -> confirmarAdocao(sc, v.getIdOng(), animalDao, interesseDao, adocaoDao, chatThreadDao, chatMsgDao);
                 case "0" -> { return; }
                 default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
@@ -1150,9 +1150,16 @@ public class Interface {
         System.out.println(ANSI_GREEN + "Match aprovado e chat aberto." + ANSI_RESET);
     }
 
-    private static void chatsListarEEnviar(Scanner sc, int idOng, ChatThreadDataFileDao threadDao, ChatMessageDataFileDao msgDao) throws IOException {
-        List<ChatThread> threads = threadDao.listAllActive();
-        if (threads.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem chats." + ANSI_RESET); return; }
+    private static void chatsListarEEnviar(Scanner sc, Voluntario voluntario, AnimalDataFileDao animalDao, ChatThreadDataFileDao threadDao, ChatMessageDataFileDao msgDao) throws IOException {
+        // Filtra threads somente da mesma ONG do voluntário (via idOng do animal)
+        List<ChatThread> threads = threadDao.listAllActive().stream()
+                .filter(t -> {
+                    try {
+                        return animalDao.read(t.getIdAnimal()).map(an -> an.getIdOng() == voluntario.getIdOng()).orElse(false);
+                    } catch (IOException e) { return false; }
+                })
+                .toList();
+        if (threads.isEmpty()) { System.out.println(ANSI_YELLOW + "Sem chats da sua ONG." + ANSI_RESET); return; }
         threads.forEach(t -> System.out.printf(" - Thread %d | Animal=%d | CPF=%s | Aberto=%s\n", t.getId(), t.getIdAnimal(), t.getCpfAdotante(), t.isAberto()));
         int tid = perguntarInt(sc, "ID da thread para visualizar/enviar");
         Optional<ChatThread> ot = threads.stream().filter(t -> t.getId() == tid).findFirst();
@@ -1160,12 +1167,21 @@ public class Interface {
         ChatThread t = ot.get();
         // Listar mensagens
         List<ChatMessage> msgs = msgDao.listAllActive().stream().filter(m -> m.getThreadId() == t.getId()).toList();
-        if (msgs.isEmpty()) System.out.println("(sem mensagens)"); else msgs.forEach(m -> System.out.printf(" [%s] %s (%s)\n", m.getSender(), m.getConteudo(), m.getEnviadoEm()));
+        if (msgs.isEmpty()) System.out.println("(sem mensagens)");
+        else msgs.forEach(m -> {
+            String senderLabel = m.getSender() == ChatSender.VOLUNTARIO ? "VOLUNTARIO" + extrairCpfVoluntarioSufixo(m) : m.getSender().name();
+            System.out.printf(" [%s] %s (%s)\n", senderLabel, limparPrefixoVoluntario(m.getConteudo()), m.getEnviadoEm());
+        });
         if (!t.isAberto()) { System.out.println(ANSI_YELLOW + "Thread fechada." + ANSI_RESET); return; }
         String texto = perguntarString(sc, "Mensagem (vazio para cancelar)", "");
         if (texto == null || texto.isBlank()) return;
         ChatMessage m = new ChatMessage();
-        m.setThreadId(t.getId()); m.setSender(ChatSender.VOLUNTARIO); m.setConteudo(texto); m.setEnviadoEm(java.time.LocalDateTime.now()); m.setAtivo(true);
+        m.setThreadId(t.getId());
+        m.setSender(ChatSender.VOLUNTARIO);
+        // Anexa o CPF do voluntário no conteúdo para identificar o remetente sem mudar o esquema binário
+        m.setConteudo(prefixarCpfVoluntario(voluntario.getCpf(), texto));
+        m.setEnviadoEm(java.time.LocalDateTime.now());
+        m.setAtivo(true);
         msgDao.create(m);
         System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
     }
@@ -1257,7 +1273,10 @@ public class Interface {
                 .toList();
         System.out.println(ANSI_CYAN + "Mensagens:" + ANSI_RESET);
         if (msgs.isEmpty()) System.out.println("(sem mensagens)");
-        else msgs.forEach(m -> System.out.printf(" [%s] %s (%s)\n", m.getSender(), m.getConteudo(), String.valueOf(m.getEnviadoEm())));
+        else msgs.forEach(m -> {
+            String senderLabel = m.getSender() == ChatSender.VOLUNTARIO ? "VOLUNTARIO" + extrairCpfVoluntarioSufixo(m) : m.getSender().name();
+            System.out.printf(" [%s] %s (%s)\n", senderLabel, limparPrefixoVoluntario(m.getConteudo()), String.valueOf(m.getEnviadoEm()));
+        });
         if (!t.isAberto()) {
             System.out.println(ANSI_YELLOW + "Esta conversa está encerrada." + ANSI_RESET);
             return;
@@ -1274,4 +1293,35 @@ public class Interface {
             System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
         }
     }
+
+    // ================================
+    // HELPERS: IDENTIFICAÇÃO DO VOLUNTÁRIO NAS MENSAGENS
+    // ================================
+    // Formato do prefixo: [VOL:CPF] mensagem
+    private static String prefixarCpfVoluntario(String cpf, String texto) {
+        if (cpf == null) cpf = "";
+        return "[VOL:" + cpf + "] " + (texto == null ? "" : texto);
+    }
+
+    private static String extrairCpfVoluntarioSufixo(ChatMessage m) {
+        if (m == null || m.getConteudo() == null) return "";
+        String c = m.getConteudo();
+        if (c.startsWith("[VOL:") && c.indexOf(']') > 5) {
+            String cpf = c.substring(5, c.indexOf(']'));
+            if (!cpf.isBlank()) return "(" + cpf + ")";
+        }
+        return "";
+    }
+
+    private static String limparPrefixoVoluntario(String conteudo) {
+        if (conteudo == null) return null;
+        if (conteudo.startsWith("[VOL:") && conteudo.indexOf(']') > 0) {
+            int end = conteudo.indexOf(']');
+            // também remove o espaço após o colchete se existir
+            int startMsg = Math.min(conteudo.length(), end + 1 + (conteudo.length() > end + 1 && conteudo.charAt(end + 1) == ' ' ? 1 : 0));
+            return conteudo.substring(startMsg);
+        }
+        return conteudo;
+    }
+
 }

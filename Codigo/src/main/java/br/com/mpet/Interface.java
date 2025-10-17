@@ -39,7 +39,8 @@ import java.util.zip.ZipOutputStream;
 public class Interface {
 
     // --- Constantes de Arquivos ---
-    private static final File DATA_DIR = new File("dats");
+    // Resolve o diretório de dados para o raiz do repositório (../dats quando executado dentro de Codigo)
+    private static final File DATA_DIR = resolveDataDir();
     private static final String ANIMAIS_DATA_FILENAME = "animais.dat";
     private static final String ANIMAIS_IDX_FILENAME = "animais.dat.idx";
     private static final String ONGS_DATA_FILENAME = "ongs.dat";
@@ -74,6 +75,29 @@ public class Interface {
     private static final File CHAT_THREADS_IDX_FILE = new File(DATA_DIR, CHAT_THREADS_IDX_FILENAME);
     private static final File CHAT_MSGS_IDX_FILE = new File(DATA_DIR, CHAT_MSGS_IDX_FILENAME);
     private static final byte VERSAO = 1;
+
+    private static File resolveDataDir() {
+        File wd = new File(System.getProperty("user.dir"));
+        // Caso 1: executando a partir da raiz do repositório (existe a pasta Codigo aqui)
+        if (new File(wd, "Codigo").exists()) {
+            return new File(wd, "dats");
+        }
+        // Caso 2: executando dentro da pasta Codigo
+        if (wd.getName().equals("Codigo") && wd.getParentFile() != null) {
+            return new File(wd.getParentFile(), "dats");
+        }
+        // Caso 3: executando de subpastas como Codigo/target/classes
+        File cur = wd;
+        for (int i = 0; i < 6 && cur != null; i++) {
+            if (cur.getName().equals("Codigo")) {
+                File root = cur.getParentFile();
+                if (root != null) return new File(root, "dats");
+            }
+            cur = cur.getParentFile();
+        }
+        // Fallback: diretório atual
+        return new File(wd, "dats");
+    }
 
     // --- Cores ANSI para o Console ---
     public static final String ANSI_RESET = "\u001B[0m";

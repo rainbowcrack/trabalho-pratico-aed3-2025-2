@@ -12,7 +12,7 @@ public class Seed {
     private static final byte VERSAO = 1;
 
     public static void main(String[] args) throws Exception {
-        File dataDir = new File("dats");
+        File dataDir = resolveDataDir();
         if (!dataDir.exists() && !dataDir.mkdirs()) {
             System.err.println("Falha ao criar diretório dats/");
             return;
@@ -193,6 +193,25 @@ public class Seed {
             System.out.println("Seed concluído: 2 ONGs e 5 animais criados.");
             System.out.printf("ONG1 id=%d, ONG2 id=%d\n", ong1.getId(), ong2.getId());
         }
+    }
+
+    private static File resolveDataDir() {
+        File wd = new File(System.getProperty("user.dir"));
+        if (new File(wd, "Codigo").exists()) {
+            return new File(wd, "dats");
+        }
+        if (wd.getName().equals("Codigo") && wd.getParentFile() != null) {
+            return new File(wd.getParentFile(), "dats");
+        }
+        File cur = wd;
+        for (int i = 0; i < 6 && cur != null; i++) {
+            if (cur.getName().equals("Codigo")) {
+                File root = cur.getParentFile();
+                if (root != null) return new File(root, "dats");
+            }
+            cur = cur.getParentFile();
+        }
+        return new File(wd, "dats");
     }
 
     private static void deleteQuiet(File f) {

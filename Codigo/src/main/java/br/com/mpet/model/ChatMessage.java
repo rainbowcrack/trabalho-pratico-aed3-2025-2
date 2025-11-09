@@ -10,6 +10,7 @@ public class ChatMessage {
     String conteudo;  // texto
     LocalDateTime enviadoEm; // timestamp
     boolean ativo;     // espelha tombstone
+    String zoneId;     // fuso horário do emissor no envio (ex.: "America/Sao_Paulo")
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -23,4 +24,6 @@ public class ChatMessage {
     public void setEnviadoEm(LocalDateTime enviadoEm) { this.enviadoEm = enviadoEm; }
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+    public String getZoneId() { return zoneId; }
+    public void setZoneId(String zoneId) { this.zoneId = zoneId; }
 }

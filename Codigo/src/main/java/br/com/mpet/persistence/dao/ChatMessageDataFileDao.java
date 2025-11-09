@@ -12,6 +12,7 @@ import br.com.mpet.persistence.io.FileHeaderHelper;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 
@@ -41,6 +42,7 @@ public class ChatMessageDataFileDao extends BaseDataFile<ChatMessage> implements
         if (e.getEnviadoEm() == null) e.setEnviadoEm(LocalDateTime.now());
         if (e.getSender() == null) e.setSender(ChatSender.VOLUNTARIO);
         if (!e.isAtivo()) e.setAtivo(true);
+        if (e.getZoneId() == null) e.setZoneId(ZoneId.systemDefault().getId());
         byte[] payload = encode(e);
         long off = appendRecord(montarRegistro((byte)0, e.getId(), payload));
         indexById.put(e.getId(), off);
@@ -182,7 +184,8 @@ public class ChatMessageDataFileDao extends BaseDataFile<ChatMessage> implements
                 Codec.encodeInt(a.getThreadId()),
                 Codec.encodeEnum(a.getSender()),
                 Codec.encodeStringU16(a.getConteudo()),
-                encodeDateTime(a.getEnviadoEm())
+                encodeDateTime(a.getEnviadoEm()),
+                Codec.encodeStringU16(a.getZoneId())
         );
     }
 
@@ -191,7 +194,15 @@ public class ChatMessageDataFileDao extends BaseDataFile<ChatMessage> implements
         Codec.Decoded<Integer> dThread = Codec.decodeInt(buf, off); off = dThread.nextOffset;
         Codec.Decoded<ChatSender> dSender = Codec.decodeEnum(buf, off, ChatSender.class); off = dSender.nextOffset;
         Codec.Decoded<String> dText = Codec.decodeStringU16(buf, off); off = dText.nextOffset;
-        Codec.Decoded<Long> dEpoch = Codec.decodeLong(buf, off);
+        Codec.Decoded<Long> dEpoch = Codec.decodeLong(buf, off); off = dEpoch.nextOffset;
+        String zoneId = null;
+        if (off < buf.length) {
+            try {
+                Codec.Decoded<String> dZone = Codec.decodeStringU16(buf, off);
+                zoneId = dZone.value;
+                off = dZone.nextOffset;
+            } catch (Exception ignore) { }
+        }
         ChatMessage a = new ChatMessage();
         a.setId(id);
         a.setThreadId(dThread.value);
@@ -200,6 +211,7 @@ public class ChatMessageDataFileDao extends BaseDataFile<ChatMessage> implements
         long epoch = dEpoch.value;
         a.setEnviadoEm(epoch == 0L ? null : LocalDateTime.ofEpochSecond(epoch,0,ZoneOffset.UTC));
         a.setAtivo(tomb == 0);
+        a.setZoneId(zoneId);
         return a;
     }
 

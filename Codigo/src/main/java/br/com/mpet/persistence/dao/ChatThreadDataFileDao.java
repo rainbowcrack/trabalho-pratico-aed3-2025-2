@@ -11,6 +11,7 @@ import br.com.mpet.persistence.io.FileHeaderHelper;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 
@@ -38,6 +39,7 @@ public class ChatThreadDataFileDao extends BaseDataFile<ChatThread> implements C
         if (e == null) throw new IllegalArgumentException("entity == null");
         e.setId(nextIdAndIncrement());
         if (e.getCriadoEm() == null) e.setCriadoEm(LocalDateTime.now());
+        if (e.getZoneId() == null) e.setZoneId(ZoneId.systemDefault().getId());
         byte[] payload = encode(e);
         long off = appendRecord(montarRegistro((byte)0, e.getId(), payload));
         indexById.put(e.getId(), off);
@@ -174,19 +176,15 @@ public class ChatThreadDataFileDao extends BaseDataFile<ChatThread> implements C
         return Codec.encodeLong(epoch);
     }
 
-    private static LocalDateTime decodeDateTime(byte[] buf, int offset) {
-        Codec.Decoded<Long> d = Codec.decodeLong(buf, offset);
-        long epoch = d.value;
-        if (epoch == 0L) return null;
-        return LocalDateTime.ofEpochSecond(epoch, 0, ZoneOffset.UTC);
-    }
+    // decodeDateTime removido; usamos Codec.decodeLong diretamente para compatibilidade
 
     private byte[] encode(ChatThread a) {
         return Codec.concat(
                 Codec.encodeInt(a.getIdAnimal()),
                 Codec.encodeStringU16(a.getCpfAdotante()),
                 Codec.encodeTriBoolean(a.isAberto()),
-                encodeDateTime(a.getCriadoEm())
+                encodeDateTime(a.getCriadoEm()),
+                Codec.encodeStringU16(a.getZoneId())
         );
     }
 
@@ -195,7 +193,16 @@ public class ChatThreadDataFileDao extends BaseDataFile<ChatThread> implements C
         Codec.Decoded<Integer> dAnimal = Codec.decodeInt(buf, off); off = dAnimal.nextOffset;
         Codec.Decoded<String> dCpf = Codec.decodeStringU16(buf, off); off = dCpf.nextOffset;
         Codec.Decoded<Boolean> dAberto = Codec.decodeTriBoolean(buf, off); off = dAberto.nextOffset;
-        Codec.Decoded<Long> dEpoch = Codec.decodeLong(buf, off);
+        Codec.Decoded<Long> dEpoch = Codec.decodeLong(buf, off); off = dEpoch.nextOffset;
+        // zoneId é opcional para retrocompatibilidade: se não houver bytes suficientes, permanece null
+        String zoneId = null;
+        if (off < buf.length) {
+            try {
+                Codec.Decoded<String> dZone = Codec.decodeStringU16(buf, off);
+                zoneId = dZone.value;
+                off = dZone.nextOffset;
+            } catch (Exception ignore) { /* versões antigas sem campo */ }
+        }
         ChatThread a = new ChatThread();
         a.setId(id);
         a.setIdAnimal(dAnimal.value);
@@ -203,6 +210,7 @@ public class ChatThreadDataFileDao extends BaseDataFile<ChatThread> implements C
         a.setAberto(Boolean.TRUE.equals(dAberto.value));
         long epoch = dEpoch.value;
         a.setCriadoEm(epoch == 0L ? null : LocalDateTime.ofEpochSecond(epoch,0,ZoneOffset.UTC));
+        a.setZoneId(zoneId);
         return a;
     }
 

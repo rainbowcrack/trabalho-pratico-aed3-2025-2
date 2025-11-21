@@ -14,6 +14,7 @@ import br.com.mpet.model.InteresseStatus;
 import br.com.mpet.model.ChatThread;
 import br.com.mpet.model.ChatMessage;
 import br.com.mpet.model.ChatSender;
+import br.com.mpet.Compressao;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -746,8 +747,8 @@ public class Interface {
     private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Sistema ---" + ANSI_RESET);
-            System.out.println("1) Fazer Backup (ZIP)");
-            System.out.println("2) Restaurar Backup (ZIP)");
+            System.out.println("1) Fazer Backup (Compressão)");
+            System.out.println("2) Restaurar Backup");
             System.out.println("3) Compactar Arquivos (Vacuum)");
             System.out.println(ANSI_RED + "0) Voltar ao Menu Principal" + ANSI_RESET);
             System.out.print("Escolha: ");
@@ -755,7 +756,30 @@ public class Interface {
 
             try {
                 switch (op) {
-                    case "1" -> backupZip();
+                    case "1" -> {
+                        System.out.println(ANSI_CYAN + "\n--- Algoritmo de Compressão ---" + ANSI_RESET);
+                        System.out.println("1) Huffman");
+                        System.out.println("2) LZW");
+                        System.out.println(ANSI_RED + "0) Cancelar" + ANSI_RESET);
+                        System.out.print("Escolha o algoritmo para o backup: ");
+                        String algoOp = sc.nextLine().trim();
+                        switch (algoOp) {
+                            case "1":
+                                System.out.println(ANSI_BLUE + "Iniciando backup com Huffman..." + ANSI_RESET);
+                                Compressao.comprimir(1); // 1 para Huffman
+                                break;
+                            case "2":
+                                System.out.println(ANSI_BLUE + "Iniciando backup com LZW..." + ANSI_RESET);
+                                Compressao.comprimir(2); // 2 para LZW
+                                break;
+                            case "0":
+                                System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                                break;
+                            default:
+                                System.out.println(ANSI_RED + "Opção de algoritmo inválida." + ANSI_RESET);
+                                break;
+                        }
+                    }
                     case "2" -> {
                         System.out.println(ANSI_YELLOW + "ATENÇÃO: Esta ação sobrescreverá os dados atuais." + ANSI_RESET);
                         if (perguntarBool(sc, "Deseja continuar? (s/n): ")) {
@@ -766,8 +790,8 @@ public class Interface {
                             adocaoDao.close();
                             interesseDao.close();
                             chatThreadDao.close();
-                            chatMsgDao.close();
-                            restoreZip();
+                            chatMsgDao.close();                            
+                            System.out.println(ANSI_YELLOW + "Funcionalidade de restauração não implementada para Huffman/LZW." + ANSI_RESET);
                             System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
                             System.exit(0);
                         }

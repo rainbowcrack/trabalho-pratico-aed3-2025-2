@@ -1,5 +1,9 @@
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Compressao.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Huffman.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Interface.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/LZW.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/Seed.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/VetorDeBits.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Adocao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Adotante.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Animal.java
@@ -23,6 +27,7 @@
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Usuario.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Vacina.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/Voluntario.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/model/VoluntarioOng.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/BaseDataFile.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/CrudDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/AdocaoDataFileDao.java
@@ -38,6 +43,7 @@
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/UsuarioDataFileDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/VoluntarioDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/VoluntarioDataFileDao.java
+/home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/dao/VoluntarioOngDataFileDao.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/ArvoreElemento.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/BTree.java
 /home/izabelchaves_mit/aed3/trabalho-pratico-aed3-2025-2/Codigo/src/main/java/br/com/mpet/persistence/index/Bucket.java

@@ -9,10 +9,12 @@ br/com/mpet/Seed.class
 br/com/mpet/persistence/dao/ChatMessageDataFileDao.class
 br/com/mpet/persistence/index/BTree.class
 br/com/mpet/model/Adocao.class
+br/com/mpet/Huffman.class
 br/com/mpet/model/Ong.class
 br/com/mpet/persistence/dao/AnimalDataFileDao.class
 br/com/mpet/persistence/io/FileHeaderHelper$HashFileHeader.class
 br/com/mpet/model/Vacina.class
+br/com/mpet/persistence/dao/VoluntarioOngDataFileDao.class
 br/com/mpet/model/ChatSender.class
 br/com/mpet/persistence/io/FileHeaderHelper$BPlusTreeHeader.class
 br/com/mpet/persistence/index/RegistroArvoreBMais.class
@@ -23,12 +25,14 @@ br/com/mpet/model/TipoMoradia.class
 br/com/mpet/persistence/index/Par.class
 br/com/mpet/model/Animal.class
 br/com/mpet/persistence/dao/InteresseDataFileDao.class
+br/com/mpet/LZW.class
 br/com/mpet/persistence/dao/AnimalDao.class
 br/com/mpet/persistence/index/RegistroHash.class
 br/com/mpet/persistence/index/ExtensibleHash.class
 br/com/mpet/Interface$1.class
 br/com/mpet/model/Cachorro.class
 br/com/mpet/model/Role.class
+br/com/mpet/HuffmanNode.class
 br/com/mpet/model/Porte.class
 br/com/mpet/persistence/dao/AdotanteDao.class
 br/com/mpet/Interface$UsuarioLogado.class
@@ -43,7 +47,9 @@ br/com/mpet/model/Interesse.class
 br/com/mpet/persistence/index/Bucket.class
 br/com/mpet/model/Exame.class
 br/com/mpet/persistence/dao/AdocaoDataFileDao.class
+br/com/mpet/model/VoluntarioOng.class
 br/com/mpet/model/ResultadoTeste.class
+br/com/mpet/Compressao.class
 br/com/mpet/persistence/BaseDataFile.class
 br/com/mpet/Interface.class
 br/com/mpet/persistence/io/FileHeaderHelper$Header.class
@@ -52,6 +58,7 @@ br/com/mpet/persistence/dao/VoluntarioDao.class
 br/com/mpet/persistence/dao/AdotanteDataFileDao.class
 br/com/mpet/persistence/dao/OngDataFileDao.class
 br/com/mpet/persistence/index/ArvoreElemento.class
+br/com/mpet/VetorDeBits.class
 br/com/mpet/model/InteresseStatus.class
 br/com/mpet/model/Gato.class
 br/com/mpet/persistence/index/Pagina.class

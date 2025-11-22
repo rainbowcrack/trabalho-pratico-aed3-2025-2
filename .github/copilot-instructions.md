@@ -1,7 +1,17 @@
 # MPet Backend - Copilot Instructions
 
 ## Project Overview
-MPet is a pet adoption matching system with a **custom binary persistence layer** using file-based storage instead of traditional databases. The backend implements CRUD operations for Animals (polymorphic: Cachorro/Gato), ONGs, Adotantes, and Voluntários with B+ Tree and Extensible Hash indexing.
+MPet is a pet adoption matching system with a **custom binary persistence layer** using file-based storage instead of traditional databases. The backend implements CRUD operations for 8 entity types:
+- **Animal** (polymorphic: Cachorro/Gato) - pets available for adoption
+- **Ong** - organizations managing animals
+- **Adotante** - people adopting pets (CPF-keyed)
+- **Voluntário** - volunteers assigned to ONGs (CPF-keyed)
+- **Adoção** - adoption records linking adoptees to animals
+- **Interesse** - adoption interest (interest stage before approval)
+- **ChatThread** - conversation sessions between adoptee and volunteer for specific animal
+- **ChatMessage** - individual chat messages within a thread
+
+All entities use B+ Tree indexing (order-4, file-backed `.idx` files) for fast offset lookups.
 
 ## Architecture & Core Concepts
 
@@ -36,13 +46,29 @@ All entities persist to `.dat` files with this layout:
 - **HashMap in-memory cache**: Each DAO maintains `Map<Key, Long>` for fast offset lookup
 - **Index rebuilding**: `rebuildIfEmpty()` scans `.dat` and reconstructs index from scratch
 
-### DAO Pattern (AnimalDataFileDao.java)
-All DAOs extend `BaseDataFile<T>`:
-1. **Create**: Assigns sequential ID from header, encodes payload, appends record, updates index
-2. **Read**: Lookup offset in index/BTree, read record at offset, decode payload
-3. **Update**: If same size → overwrite in-place; if different → tombstone old + append new + update index
-4. **Delete**: Set tombstone byte=1, remove from index (physical space not reclaimed until vacuum)
-5. **Vacuum**: Creates temp file with only active records, swaps `.dat` and rebuilds `.idx`
+### DAO Pattern
+The system uses **8 specialized DAOs**, all extending `BaseDataFile<T>`:
+
+**4 Standard DAOs** (id-keyed, direct B+ indexing):
+- `AnimalDataFileDao`: Polymorphic CRUD (Cachorro/Gato). Tipo byte = 1/2. Payload contains idOng (references ONG) + species-specific fields
+- `OngDataFileDao`: Organizations (id → offset in B+ tree)
+- `AdocaoDataFileDao`: Adoption records (id → offset). Carries cpfAdotante (String key) + idAnimal + dataAdocao
+- `InteresseDataFileDao`: Adoption interests (id → offset). Carries cpfAdotante + idAnimal + status (PENDENTE/APROVADO/RECUSADO)
+
+**2 User DAOs** (CPF-keyed with integer mapping):
+- `AdotanteDataFileDao`: Adoptees. **Logical key = CPF** (String), **physical key = idKey** (int). Stores CPF in payload for verification. ID gap/reuse possible after vacuum.
+- `VoluntarioDataFileDao`: Volunteers. **Logical key = CPF** (String), **physical key = idKey** (int). Contains idOng foreign key + cargo (Role). CPF verified in payload.
+
+**2 Chat DAOs** (id-keyed, thread-message hierarchy):
+- `ChatThreadDataFileDao`: Chat sessions (id → offset). Contains idAnimal + cpfAdotante + aberto (boolean) + criadoEm (LocalDateTime as epoch long)
+- `ChatMessageDataFileDao`: Messages within threads (id → offset). Contains threadId (foreign key to ChatThread) + sender (ADOTANTE/VOLUNTARIO) + conteudo + enviadoEm (epoch long)
+
+**All DAOs implement**:
+1. **Create**: Assigns sequential ID from header, encodes payload, appends record, updates B+ tree index
+2. **Read**: Lookup offset in B+ tree, read record at offset, decode payload. User DAOs decode CPF from payload and verify
+3. **Update**: If same size → overwrite in-place; if different → tombstone old + append new + update B+ tree
+4. **Delete**: Set tombstone byte=1, remove from B+ tree (physical space not reclaimed until vacuum)
+5. **Vacuum**: Creates temp DAO with `_tmp.dat`, iterates `listAllActive()` (excludes tombstoned), clones/creates all entities, closes both DAOs, swaps files and `.idx`, **must reopen DAO after vacuum**
 
 ### Entity Polymorphism
 `Animal` is abstract with concrete types `Cachorro` and `Gato`:

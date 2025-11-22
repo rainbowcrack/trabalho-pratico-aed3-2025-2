@@ -113,11 +113,38 @@ public class Interface {
     public static final String ANSI_BOLD = "\u001B[1m";
 
 
+    // ================================
+    // INICIALIZAÇÃO DE CHAVES RSA
+    // ================================
+    private static void inicializarChavesCriptografia() throws Exception {
+        File keysDir = new File(System.getProperty("user.dir"), "keys");
+        File publicKey = new File(keysDir, "public_key.pem");
+        File privateKey = new File(keysDir, "private_key.pem");
+        
+        if (!publicKey.exists() || !privateKey.exists()) {
+            if (!keysDir.exists() && !keysDir.mkdirs()) {
+                throw new Exception("Não foi possível criar diretório de chaves: " + keysDir.getAbsolutePath());
+            }
+            System.out.println(ANSI_YELLOW + "⚙️  Gerando par de chaves RSA-2048..." + ANSI_RESET);
+            RSAKeyGen.main(new String[]{});
+            System.out.println(ANSI_GREEN + "✓ Chaves RSA inicializadas com sucesso!" + ANSI_RESET);
+        }
+    }
+
     public static void main(String[] args) {
         if (!DATA_DIR.exists() && !DATA_DIR.mkdirs()) {
             System.out.println(ANSI_RED + "Falha ao criar diretório de dados." + ANSI_RESET);
             return;
         }
+        
+        // Inicializar chaves RSA
+        try {
+            inicializarChavesCriptografia();
+        } catch (Exception e) {
+            System.out.println(ANSI_YELLOW + "Aviso: Falha ao inicializar chaves RSA: " + e.getMessage() + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "A aplicação continuará em modo compatível (senhas em texto plano)." + ANSI_RESET);
+        }
+        
         try (
             Scanner sc = new Scanner(System.in);
             AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);

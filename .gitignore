@@ -1,0 +1,35 @@
+# Dados e índices
+dats/
+*.dat
+*.dat.idx
+
+# Chaves RSA (CONFIDENCIAL - NUNCA VERSIONAR)
+keys/
+*.pem
+
+# Backup
+backup.zip
+
+# Maven
+target/
+.classpath
+.project
+.settings/
+*.jar
+*.war
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compilação
+*.class
+*.log

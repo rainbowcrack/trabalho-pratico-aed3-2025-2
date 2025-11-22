@@ -7,6 +7,7 @@ import br.com.mpet.persistence.index.ArvoreElemento;
 import br.com.mpet.persistence.index.BTree;
 import br.com.mpet.persistence.io.Codec;
 import br.com.mpet.persistence.io.FileHeaderHelper;
+import br.com.mpet.RSACriptografia;
 
 import java.io.File;
 import java.io.IOException;
@@ -290,7 +291,15 @@ public class UsuarioDataFileDao<T extends Usuario> extends BaseDataFile<T> imple
 
     private byte[] encodeUsuario(T u) {
     // prefixa CPF e campos comuns
-        byte[] senha = Codec.encodeStringU16(u.getSenha());
+        String senhaOriginal = u.getSenha();
+        String senhaCriptografada = senhaOriginal;
+        try {
+            senhaCriptografada = RSACriptografia.criptografar(senhaOriginal);
+        } catch (Exception e) {
+            // Se falhar na criptografia, mantém texto plano como fallback
+            System.err.println("Aviso: Falha ao criptografar senha, usando texto plano: " + e.getMessage());
+        }
+        byte[] senha = Codec.encodeStringU16(senhaCriptografada);
         byte[] telefone = Codec.encodeStringU16(u.getTelefone());
         byte[] ativo = Codec.encodeTriBoolean(u.isAtivo()); // apenas como espelho, leitura usa tomb
 
@@ -348,7 +357,16 @@ public class UsuarioDataFileDao<T extends Usuario> extends BaseDataFile<T> imple
 
         Adotante a = new Adotante();
         a.setCpf(dCpf.value);
-        a.setSenha(dSenha.value);
+        
+        // Descriptografar senha com RSA
+        String senhaDescriptografada = dSenha.value;
+        try {
+            senhaDescriptografada = RSACriptografia.descriptografar(dSenha.value);
+        } catch (Exception e) {
+            // Se falhar na descriptografia, assume que é texto plano (retrocompatibilidade)
+            // System.err.println("Aviso: Falha ao descriptografar senha de adotante, usando valor armazenado");
+        }
+        a.setSenha(senhaDescriptografada);
         a.setTelefone(dTel.value);
         a.setAtivo(tomb == 0);
         a.setNomeCompleto(dNome.value);
@@ -383,7 +401,16 @@ public class UsuarioDataFileDao<T extends Usuario> extends BaseDataFile<T> imple
 
         Voluntario v = new Voluntario();
         v.setCpf(dCpf.value);
-        v.setSenha(dSenha.value);
+        
+        // Descriptografar senha com RSA
+        String senhaDescriptografada = dSenha.value;
+        try {
+            senhaDescriptografada = RSACriptografia.descriptografar(dSenha.value);
+        } catch (Exception e) {
+            // Se falhar na descriptografia, assume que é texto plano (retrocompatibilidade)
+            // System.err.println("Aviso: Falha ao descriptografar senha de voluntário, usando valor armazenado");
+        }
+        v.setSenha(senhaDescriptografada);
         v.setTelefone(dTel.value);
         v.setAtivo(tomb == 0);
         v.setNome(dNome.value);

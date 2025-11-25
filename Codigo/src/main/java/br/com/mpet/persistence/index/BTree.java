@@ -166,7 +166,7 @@ public class BTree<T extends RegistroArvoreBMais<T>> implements AutoCloseable {
             Par<T, Long> promovido = create(p.filhos[i], newChave);
 
             // Se a chamada recursiva não retornou nada para promover, encerra.
-            if (promovido != null) {
+            if (promovido == null) {
                 return null;
             }
 

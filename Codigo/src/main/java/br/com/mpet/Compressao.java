@@ -10,7 +10,7 @@ import java.util.zip.ZipOutputStream;
 public class Compressao {
 
     private static final String PASTA_DADOS = "dats";
-    private static final String ARQUIVO_BACKUP = "backup.zip";
+    private static final String ARQUIVO_BACKUP = "backup.zip"; // Salvo na RAIZ do projeto (fora de /dats/)
 
     public static void comprimir(int versao) throws IOException {
         File pastaDados = new File(PASTA_DADOS);

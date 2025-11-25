@@ -51,11 +51,12 @@ public class Interface {
     private static final String VOLUNTARIOS_DATA_FILENAME = "voluntarios.dat";
     private static final String VOLUNTARIOS_IDX_FILENAME = "voluntarios.dat.idx";
     private static final String ADOCOES_DATA_FILENAME = "adocoes.dat";
+    private static final String ADOCOES_IDX_FILENAME = "adocoes.dat.idx";
     private static final String INTERESSES_DATA_FILENAME = "interesses.dat";
-    private static final String CHAT_THREADS_DATA_FILENAME = "chat_threads.dat";
-    private static final String CHAT_MSGS_DATA_FILENAME = "chat_msgs.dat";
     private static final String INTERESSES_IDX_FILENAME = "interesses.dat.idx";
+    private static final String CHAT_THREADS_DATA_FILENAME = "chat_threads.dat";
     private static final String CHAT_THREADS_IDX_FILENAME = "chat_threads.dat.idx";
+    private static final String CHAT_MSGS_DATA_FILENAME = "chat_msgs.dat";
     private static final String CHAT_MSGS_IDX_FILENAME = "chat_msgs.dat.idx";
     private static final String ZIP_FILENAME = "backup.zip";
 
@@ -69,11 +70,12 @@ public class Interface {
     private static final File VOLUNTARIOS_DATA_FILE = new File(DATA_DIR, VOLUNTARIOS_DATA_FILENAME);
     private static final File VOLUNTARIOS_IDX_FILE = new File(DATA_DIR, VOLUNTARIOS_IDX_FILENAME);
     private static final File ADOCOES_DATA_FILE = new File(DATA_DIR, ADOCOES_DATA_FILENAME);
+    private static final File ADOCOES_IDX_FILE = new File(DATA_DIR, ADOCOES_IDX_FILENAME);
     private static final File INTERESSES_DATA_FILE = new File(DATA_DIR, INTERESSES_DATA_FILENAME);
-    private static final File CHAT_THREADS_DATA_FILE = new File(DATA_DIR, CHAT_THREADS_DATA_FILENAME);
-    private static final File CHAT_MSGS_DATA_FILE = new File(DATA_DIR, CHAT_MSGS_DATA_FILENAME);
     private static final File INTERESSES_IDX_FILE = new File(DATA_DIR, INTERESSES_IDX_FILENAME);
+    private static final File CHAT_THREADS_DATA_FILE = new File(DATA_DIR, CHAT_THREADS_DATA_FILENAME);
     private static final File CHAT_THREADS_IDX_FILE = new File(DATA_DIR, CHAT_THREADS_IDX_FILENAME);
+    private static final File CHAT_MSGS_DATA_FILE = new File(DATA_DIR, CHAT_MSGS_DATA_FILENAME);
     private static final File CHAT_MSGS_IDX_FILE = new File(DATA_DIR, CHAT_MSGS_IDX_FILENAME);
     private static final byte VERSAO = 1;
 
@@ -112,6 +114,102 @@ public class Interface {
     public static final String ANSI_WHITE = "\u001B[37m";
     public static final String ANSI_BOLD = "\u001B[1m";
 
+    // ========================================================================
+    // FUNÇÕES DE UI MELHORADAS
+    // ========================================================================
+    
+    /**
+     * Limpa a tela do terminal (funciona em Linux/Mac/Windows 10+)
+     */
+    private static void clearScreen() {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
+    }
+    
+    /**
+     * Exibe um splash screen animado ao iniciar
+     */
+    private static void showSplashScreen() {
+        clearScreen();
+        System.out.println(ANSI_BOLD + ANSI_CYAN);
+        System.out.println("╔═══════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                                                                   ║");
+        System.out.println("║            🐾 Bem-vindo ao Sistema MPet PetMatch 🐾             ║");
+        System.out.println("║                                                                   ║");
+        System.out.println("║   Sistema de Adoção Responsável com Tecnologia de Ponta          ║");
+        System.out.println("║                                                                   ║");
+        System.out.println("║   ✓ Criptografia RSA-2048                                       ║");
+        System.out.println("║   ✓ Compressão LZW/Huffman                                      ║");
+        System.out.println("║   ✓ Indexação B+ Tree                                           ║");
+        System.out.println("║   ✓ Backup/Restore Automático                                   ║");
+        System.out.println("║                                                                   ║");
+        System.out.println("╚═══════════════════════════════════════════════════════════════════╝");
+        System.out.println(ANSI_RESET);
+        
+        // Animação de loading
+        System.out.print(ANSI_YELLOW + "\n   Inicializando sistema");
+        for (int i = 0; i < 5; i++) {
+            try {
+                Thread.sleep(200);
+                System.out.print(".");
+            } catch (InterruptedException e) { }
+        }
+        System.out.println(" " + ANSI_GREEN + "✓ OK!" + ANSI_RESET);
+    }
+    
+    /**
+     * Exibe uma barra de progresso animada
+     */
+    private static void showProgressBar(String label, int percent) {
+        int bars = percent / 2; // 50 caracteres = 100%
+        String filled = "█".repeat(Math.max(0, bars));
+        String empty = "░".repeat(Math.max(0, 50 - bars));
+        
+        System.out.print("\r" + ANSI_CYAN + label + " [" + filled + empty + "] " + 
+                         ANSI_BOLD + percent + "%" + ANSI_RESET);
+        System.out.flush();
+    }
+    
+    /**
+     * Aguarda o usuário pressionar ENTER
+     */
+    private static void pressEnterToContinue(Scanner sc) {
+        System.out.print("\n" + ANSI_YELLOW + "Pressione ENTER para continuar..." + ANSI_RESET);
+        sc.nextLine();
+    }
+    
+    /**
+     * Exibe um título de seção com destaque
+     */
+    private static void printSectionTitle(String title) {
+        clearScreen();
+        System.out.println("\n" + ANSI_BOLD + ANSI_BLUE);
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println("   " + title);
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println(ANSI_RESET);
+    }
+    
+    /**
+     * Mensagens de sucesso/erro/aviso estilizadas
+     */
+    private static void showSuccess(String message) {
+        System.out.println(ANSI_GREEN + "✓ " + message + ANSI_RESET);
+    }
+    
+    private static void showError(String message) {
+        System.out.println(ANSI_RED + "✗ " + message + ANSI_RESET);
+    }
+    
+    private static void showWarning(String message) {
+        System.out.println(ANSI_YELLOW + "⚠ " + message + ANSI_RESET);
+    }
+    
+    private static void showInfo(String message) {
+        System.out.println(ANSI_CYAN + "ℹ " + message + ANSI_RESET);
+    }
+
+
 
     // ================================
     // INICIALIZAÇÃO DE CHAVES RSA
@@ -131,18 +229,161 @@ public class Interface {
         }
     }
 
+    // ================================
+    // VERIFICAÇÃO INICIAL DE DADOS
+    // ================================
+    private static boolean existemArquivosDeDados() {
+        File[] arquivosCriticos = {
+            ANIMAIS_DATA_FILE,
+            ONGS_DATA_FILE,
+            ADOTANTES_DATA_FILE,
+            VOLUNTARIOS_DATA_FILE
+        };
+        
+        for (File f : arquivosCriticos) {
+            if (f.exists() && f.length() >= 128) { // 128 = tamanho do header (aceita vazio também)
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private static boolean menuInicializacao(Scanner sc) throws IOException {
+        System.out.println("\n" + ANSI_CYAN + "╔══════════════════════════════════════════════════════╗" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "║" + ANSI_RESET + ANSI_BOLD + "       🐾 MPet - Sistema de Adoção de Pets 🐾       " + ANSI_RESET + ANSI_CYAN + "║" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "╚══════════════════════════════════════════════════════╝" + ANSI_RESET);
+        System.out.println();
+        System.out.println(ANSI_YELLOW + "⚠️  Nenhum arquivo de dados foi encontrado!" + ANSI_RESET);
+        System.out.println();
+        System.out.println("Escolha uma opção:");
+        System.out.println("1) Iniciar sistema novo (vazio)");
+        System.out.println("2) Restaurar de backup comprimido");
+        System.out.println("0) Sair");
+        System.out.print("\n→ Opção: ");
+        
+        String opcao = sc.nextLine().trim();
+        
+        switch (opcao) {
+            case "1":
+                System.out.println(ANSI_GREEN + "\n✓ Iniciando sistema novo..." + ANSI_RESET);
+                return true; // Continuar com sistema vazio
+                
+            case "2":
+                return restaurarBackupInicial(sc);
+                
+            case "0":
+                System.out.println(ANSI_PURPLE + "Até logo!" + ANSI_RESET);
+                return false;
+                
+            default:
+                System.out.println(ANSI_RED + "Opção inválida!" + ANSI_RESET);
+                return menuInicializacao(sc); // Recursão para tentar novamente
+        }
+    }
+    
+    private static boolean restaurarBackupInicial(Scanner sc) throws IOException {
+        System.out.println(ANSI_BLUE + "\n═══ Restaurar Backup ═══" + ANSI_RESET);
+        
+        // Verificar se existe backup.zip na RAIZ do projeto (não em /dats/)
+        File backupRaiz = new File("backup.zip");
+        File backupDats = new File(DATA_DIR, "backup.zip");
+        
+        // Priorizar backup da raiz (local correto após compressão)
+        File backupPadrao = backupRaiz.exists() ? backupRaiz : 
+                           (backupDats.exists() ? backupDats : null);
+        
+        if (backupPadrao != null) {
+            System.out.println(ANSI_GREEN + "✓ Arquivo de backup encontrado: " + backupPadrao.getAbsolutePath() + ANSI_RESET);
+            System.out.print("\nDeseja utilizar este arquivo? (S/n): ");
+            String resp = sc.nextLine().trim().toUpperCase();
+            
+            if (resp.isEmpty() || resp.equals("S")) {
+                System.out.println(ANSI_BLUE + "\n→ Restaurando dados do backup..." + ANSI_RESET);
+                restaurarBackupComprimido(backupPadrao);
+                System.out.println(ANSI_GREEN + "✓ Dados restaurados com sucesso!" + ANSI_RESET);
+                System.out.println(ANSI_YELLOW + "\n⚠️  Pressione ENTER para continuar..." + ANSI_RESET);
+                sc.nextLine();
+                return true;
+            }
+        } else {
+            System.out.println(ANSI_YELLOW + "⚠️  Arquivo 'backup.zip' não encontrado." + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "   💡 Dica: O backup é salvo na RAIZ do projeto (não em /dats/)" + ANSI_RESET);
+        }
+        
+        // Solicitar caminho do arquivo
+        System.out.println("\nInforme o caminho completo do arquivo de backup:");
+        System.out.print("→ Caminho: ");
+        String caminhoBackup = sc.nextLine().trim();
+        
+        if (caminhoBackup.isEmpty()) {
+            System.out.println(ANSI_RED + "✗ Operação cancelada." + ANSI_RESET);
+            return menuInicializacao(sc); // Volta ao menu inicial
+        }
+        
+        File arquivoBackup = new File(caminhoBackup);
+        
+        if (!arquivoBackup.exists()) {
+            System.out.println(ANSI_RED + "✗ Arquivo não encontrado: " + caminhoBackup + ANSI_RESET);
+            System.out.print("\nTentar novamente? (S/n): ");
+            String resp = sc.nextLine().trim().toUpperCase();
+            if (resp.isEmpty() || resp.equals("S")) {
+                return restaurarBackupInicial(sc);
+            } else {
+                return menuInicializacao(sc);
+            }
+        }
+        
+        try {
+            System.out.println(ANSI_BLUE + "\n→ Restaurando dados do backup..." + ANSI_RESET);
+            restaurarBackupComprimido(arquivoBackup);
+            System.out.println(ANSI_GREEN + "✓ Dados restaurados com sucesso!" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "\n⚠️  Pressione ENTER para continuar..." + ANSI_RESET);
+            sc.nextLine();
+            return true;
+        } catch (IOException e) {
+            System.out.println(ANSI_RED + "✗ Erro ao restaurar backup: " + e.getMessage() + ANSI_RESET);
+            System.out.print("\nTentar novamente? (S/n): ");
+            String resp = sc.nextLine().trim().toUpperCase();
+            if (resp.isEmpty() || resp.equals("S")) {
+                return restaurarBackupInicial(sc);
+            } else {
+                return menuInicializacao(sc);
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        // Exibir splash screen
+        showSplashScreen();
+        
         if (!DATA_DIR.exists() && !DATA_DIR.mkdirs()) {
-            System.out.println(ANSI_RED + "Falha ao criar diretório de dados." + ANSI_RESET);
+            showError("Falha ao criar diretório de dados.");
             return;
         }
+        
+        // Mostrar diretório de dados sendo usado
+        showInfo("📂 Diretório de dados: " + DATA_DIR.getAbsolutePath());
         
         // Inicializar chaves RSA
         try {
             inicializarChavesCriptografia();
         } catch (Exception e) {
-            System.out.println(ANSI_YELLOW + "Aviso: Falha ao inicializar chaves RSA: " + e.getMessage() + ANSI_RESET);
-            System.out.println(ANSI_YELLOW + "A aplicação continuará em modo compatível (senhas em texto plano)." + ANSI_RESET);
+            showWarning("Falha ao inicializar chaves RSA: " + e.getMessage());
+            showWarning("A aplicação continuará em modo compatível (senhas em texto plano).");
+        }
+        
+        // Verificar se existem dados, se não, oferecer opções
+        Scanner scInicial = new Scanner(System.in);
+        try {
+            if (!existemArquivosDeDados()) {
+                boolean continuar = menuInicializacao(scInicial);
+                if (!continuar) {
+                    return; // Usuário escolheu sair
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(ANSI_RED + "Erro na inicialização: " + e.getMessage() + ANSI_RESET);
+            return;
         }
         
         try (
@@ -774,9 +1015,11 @@ public class Interface {
     private static void menuSistema(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao, AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao, ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) {
         while (true) {
             System.out.println(ANSI_CYAN + "\n--- Sistema ---" + ANSI_RESET);
-            System.out.println("1) Fazer Backup (Compressão)");
+            System.out.println("1) Fazer Backup (Compressão Huffman/LZW)");
             System.out.println("2) Restaurar Backup");
             System.out.println("3) Compactar Arquivos (Vacuum)");
+            System.out.println(ANSI_PURPLE + "4) 🌱 Popular Base de Dados (Seed)" + ANSI_RESET);
+            System.out.println(ANSI_RED + "5) 🗑️  Deletar TODOS os Dados" + ANSI_RESET);
             System.out.println(ANSI_RED + "0) Voltar ao Menu Principal" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
@@ -786,24 +1029,28 @@ public class Interface {
                     case "1" -> {
                         System.out.println(ANSI_CYAN + "\n--- Algoritmo de Compressão ---" + ANSI_RESET);
                         System.out.println("1) Huffman");
-                        System.out.println("2) LZW");
+                        System.out.println("2) LZW ⭐ (Recomendado - com descompressão)");
                         System.out.println(ANSI_RED + "0) Cancelar" + ANSI_RESET);
-                        System.out.print("Escolha o algoritmo para o backup: ");
+                        System.out.print("Escolha o algoritmo: ");
                         String algoOp = sc.nextLine().trim();
+                        
                         switch (algoOp) {
                             case "1":
                                 System.out.println(ANSI_BLUE + "Iniciando backup com Huffman..." + ANSI_RESET);
-                                Compressao.comprimir(1); // 1 para Huffman
+                                System.out.println(ANSI_YELLOW + "⚠️  AVISO: Huffman não possui descompressão implementada!" + ANSI_RESET);
+                                Compressao.comprimir(1); // 1 = Huffman
+                                System.out.println(ANSI_GREEN + "✓ Backup salvo em: backup.zip" + ANSI_RESET);
                                 break;
                             case "2":
                                 System.out.println(ANSI_BLUE + "Iniciando backup com LZW..." + ANSI_RESET);
-                                Compressao.comprimir(2); // 2 para LZW
+                                Compressao.comprimir(2); // 2 = LZW
+                                System.out.println(ANSI_GREEN + "✓ Backup salvo em: backup.zip (restaurável)" + ANSI_RESET);
                                 break;
                             case "0":
                                 System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
                                 break;
                             default:
-                                System.out.println(ANSI_RED + "Opção de algoritmo inválida." + ANSI_RESET);
+                                System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
                                 break;
                         }
                     }
@@ -817,8 +1064,10 @@ public class Interface {
                             adocaoDao.close();
                             interesseDao.close();
                             chatThreadDao.close();
-                            chatMsgDao.close();                            
-                            System.out.println(ANSI_YELLOW + "Funcionalidade de restauração não implementada para Huffman/LZW." + ANSI_RESET);
+                            chatMsgDao.close();
+                            
+                            restaurarBackupComprimido();
+                            
                             System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
                             System.exit(0);
                         }
@@ -835,12 +1084,514 @@ public class Interface {
                         chatMsgDao.vacuum();
                         System.out.println(ANSI_GREEN + "Compactação concluída. É recomendado reiniciar o programa." + ANSI_RESET);
                     }
+                    case "4" -> {
+                        menuSeed(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao);
+                    }
+                    case "5" -> {
+                        deletarTodosDados(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao);
+                    }
                     case "0" -> { return; }
                     default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
                 }
             } catch (Exception ex) {
                 System.out.println(ANSI_RED + "Erro: " + ex.getMessage() + ANSI_RESET);
             }
+        }
+    }
+
+    // =================================================================================
+    // DELETAR TODOS OS DADOS
+    // =================================================================================
+    private static void deletarTodosDados(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao,
+                                         AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao,
+                                         AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao,
+                                         ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) {
+        System.out.println("\n" + ANSI_RED + "╔════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+        System.out.println(ANSI_RED + "║" + ANSI_RESET + ANSI_BOLD + "            ⚠️  DELETAR TODOS OS DADOS ⚠️             " + ANSI_RESET + ANSI_RED + "║" + ANSI_RESET);
+        System.out.println(ANSI_RED + "╚════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+        System.out.println();
+        System.out.println(ANSI_RED + ANSI_BOLD + "⛔ ATENÇÃO: ESTA AÇÃO É IRREVERSÍVEL!" + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "   Todos os arquivos .dat e .idx serão PERMANENTEMENTE deletados!" + ANSI_RESET);
+        System.out.println();
+        System.out.println("Arquivos que serão deletados:");
+        System.out.println("  • animais.dat e animais.dat.idx");
+        System.out.println("  • ongs.dat e ongs.dat.idx");
+        System.out.println("  • adotantes.dat e adotantes.dat.idx");
+        System.out.println("  • voluntarios.dat e voluntarios.dat.idx");
+        System.out.println("  • adocoes.dat e adocoes.dat.idx");
+        System.out.println("  • interesses.dat e interesses.dat.idx");
+        System.out.println("  • chat_threads.dat e chat_threads.dat.idx");
+        System.out.println("  • chat_msgs.dat e chat_msgs.dat.idx");
+        System.out.println();
+        System.out.println(ANSI_YELLOW + "💡 Dica: Faça um backup antes de deletar!" + ANSI_RESET);
+        System.out.println();
+        
+        System.out.print(ANSI_RED + "Digite 'DELETAR' (em maiúsculas) para confirmar: " + ANSI_RESET);
+        String confirmacao = sc.nextLine().trim();
+        
+        if (!confirmacao.equals("DELETAR")) {
+            System.out.println(ANSI_GREEN + "\n✓ Operação cancelada. Nenhum arquivo foi deletado." + ANSI_RESET);
+            return;
+        }
+        
+        System.out.println();
+        System.out.println(ANSI_RED + "🗑️  Deletando arquivos..." + ANSI_RESET);
+        
+        try {
+            // Fechar todos os DAOs primeiro (ignorando erros se já estiverem fechados)
+            try { animalDao.close(); } catch (Exception ignored) {}
+            try { ongDao.close(); } catch (Exception ignored) {}
+            try { adotanteDao.close(); } catch (Exception ignored) {}
+            try { voluntarioDao.close(); } catch (Exception ignored) {}
+            try { adocaoDao.close(); } catch (Exception ignored) {}
+            try { interesseDao.close(); } catch (Exception ignored) {}
+            try { chatThreadDao.close(); } catch (Exception ignored) {}
+            try { chatMsgDao.close(); } catch (Exception ignored) {}
+            
+            int deletados = 0;
+            int falhas = 0;
+            
+            // Listar e deletar todos os arquivos .dat e .idx
+            File[] arquivos = DATA_DIR.listFiles((dir, name) -> 
+                name.endsWith(".dat") || name.endsWith(".idx"));
+            
+            if (arquivos != null) {
+                for (File arquivo : arquivos) {
+                    if (arquivo.delete()) {
+                        System.out.println(ANSI_GREEN + "  ✓ " + arquivo.getName() + " deletado" + ANSI_RESET);
+                        deletados++;
+                    } else {
+                        System.out.println(ANSI_RED + "  ✗ Falha ao deletar " + arquivo.getName() + ANSI_RESET);
+                        falhas++;
+                    }
+                }
+            }
+            
+            System.out.println();
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + "RESUMO:" + ANSI_RESET);
+            System.out.println("  • Arquivos deletados: " + ANSI_GREEN + deletados + ANSI_RESET);
+            if (falhas > 0) {
+                System.out.println("  • Falhas: " + ANSI_RED + falhas + ANSI_RESET);
+            }
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println();
+            
+            if (deletados > 0) {
+                System.out.println(ANSI_GREEN + "✓ Dados deletados com sucesso!" + ANSI_RESET);
+                System.out.println(ANSI_YELLOW + "\n⚠️  O programa será encerrado. Execute novamente para criar novos dados." + ANSI_RESET);
+                System.out.println(ANSI_YELLOW + "Pressione ENTER para sair..." + ANSI_RESET);
+                sc.nextLine();
+                System.exit(0);
+            }
+            
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "\n✗ Erro ao deletar dados: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+
+    // =================================================================================
+    // SEED - POPULAR BASE DE DADOS
+    // =================================================================================
+    private static void menuSeed(Scanner sc, AnimalDataFileDao animalDao, OngDataFileDao ongDao, 
+                                 AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao,
+                                 AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao,
+                                 ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao) {
+        try {
+            System.out.println("\n" + ANSI_PURPLE + "╔════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+            System.out.println(ANSI_PURPLE + "║" + ANSI_RESET + ANSI_BOLD + "            🌱 POPULAR BASE DE DADOS (SEED) 🌱            " + ANSI_RESET + ANSI_PURPLE + "║" + ANSI_RESET);
+            System.out.println(ANSI_PURPLE + "╚════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+            
+            System.out.println("\n" + ANSI_YELLOW + "⚠️  ATENÇÃO: Esta operação irá criar dados de teste!" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "   Os dados existentes NÃO serão removidos." + ANSI_RESET);
+            System.out.println();
+            System.out.println(ANSI_CYAN + "💡 IMPORTANTE: Se você quer começar do zero, use:" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "   Menu Sistema → 5) Deletar TODOS os Dados (depois volte aqui)" + ANSI_RESET);
+            System.out.println();
+            
+            // Perguntar quantidades
+            System.out.println(ANSI_CYAN + "Quantas entidades deseja criar?" + ANSI_RESET);
+            System.out.println(ANSI_WHITE + "(Pressione ENTER para usar valor padrão)" + ANSI_RESET);
+            System.out.println();
+            
+            int numOngs = perguntarNumero(sc, "ONGs", 10, 1, 100);
+            int numVoluntarios = perguntarNumero(sc, "Voluntários (por ONG)", 5, 1, 50);
+            int numAdotantes = perguntarNumero(sc, "Adotantes", 50, 1, 1000);
+            int numAnimais = perguntarNumero(sc, "Animais (por ONG)", 20, 1, 500);
+            int numInteresses = perguntarNumero(sc, "Interesses", 30, 1, 500);
+            int numAdocoes = perguntarNumero(sc, "Adoções", 10, 1, 200);
+            int numThreads = perguntarNumero(sc, "Conversas (Threads)", 15, 1, 200);
+            int numMensagens = perguntarNumero(sc, "Mensagens (por thread)", 5, 1, 50);
+            
+            System.out.println();
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + "RESUMO:" + ANSI_RESET);
+            System.out.println("  • " + numOngs + " ONGs");
+            System.out.println("  • " + (numOngs * numVoluntarios) + " Voluntários (" + numVoluntarios + " por ONG)");
+            System.out.println("  • " + numAdotantes + " Adotantes");
+            System.out.println("  • " + (numOngs * numAnimais) + " Animais (" + numAnimais + " por ONG)");
+            System.out.println("  • " + numInteresses + " Interesses");
+            System.out.println("  • " + numAdocoes + " Adoções");
+            System.out.println("  • " + numThreads + " Conversas");
+            System.out.println("  • " + (numThreads * numMensagens) + " Mensagens (" + numMensagens + " por conversa)");
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println();
+            
+            if (!perguntarBool(sc, "Confirmar criação? (s/n): ")) {
+                System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                return;
+            }
+            
+            // Preparar ambiente: rebuild de índices
+            System.out.println();
+            System.out.println(ANSI_BLUE + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println(ANSI_BLUE + "    🔧 PREPARANDO AMBIENTE PARA SEED" + ANSI_RESET);
+            System.out.println(ANSI_BLUE + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println();
+            
+            try {
+                // Rebuild de índices (se necessário)
+                System.out.println(ANSI_CYAN + "→ Verificando e reconstruindo índices B+..." + ANSI_RESET);
+                
+                int indicesReconstruidos = 0;
+                
+                try {
+                    ongDao.rebuildIfEmpty();
+                    System.out.println(ANSI_GREEN + "  ✓ Índice de ONGs OK" + ANSI_RESET);
+                    indicesReconstruidos++;
+                } catch (Exception e) {
+                    System.out.println(ANSI_RED + "  ✗ ONGs: " + e.getMessage() + ANSI_RESET);
+                    throw new RuntimeException("Falha ao preparar índice de ONGs", e);
+                }
+                
+                try {
+                    animalDao.rebuildIfEmpty();
+                    System.out.println(ANSI_GREEN + "  ✓ Índice de Animais OK" + ANSI_RESET);
+                    indicesReconstruidos++;
+                } catch (Exception e) {
+                    System.out.println(ANSI_RED + "  ✗ Animais: " + e.getMessage() + ANSI_RESET);
+                    throw new RuntimeException("Falha ao preparar índice de Animais", e);
+                }
+                
+                try {
+                    adotanteDao.rebuildIfEmpty();
+                    System.out.println(ANSI_GREEN + "  ✓ Índice de Adotantes OK" + ANSI_RESET);
+                    indicesReconstruidos++;
+                } catch (Exception e) {
+                    System.out.println(ANSI_RED + "  ✗ Adotantes: " + e.getMessage() + ANSI_RESET);
+                    throw new RuntimeException("Falha ao preparar índice de Adotantes", e);
+                }
+                
+                try {
+                    voluntarioDao.rebuildIfEmpty();
+                    System.out.println(ANSI_GREEN + "  ✓ Índice de Voluntários OK" + ANSI_RESET);
+                    indicesReconstruidos++;
+                } catch (Exception e) {
+                    System.out.println(ANSI_RED + "  ✗ Voluntários: " + e.getMessage() + ANSI_RESET);
+                    throw new RuntimeException("Falha ao preparar índice de Voluntários", e);
+                }
+                
+                System.out.println();
+                System.out.println(ANSI_GREEN + "✓ " + indicesReconstruidos + " índices preparados! Iniciando criação de dados..." + ANSI_RESET);
+                
+            } catch (Exception e) {
+                System.out.println();
+                System.out.println(ANSI_RED + "✗ Erro ao preparar ambiente: " + e.getMessage() + ANSI_RESET);
+                System.out.println();
+                System.out.println(ANSI_YELLOW + "💡 Solução: Use a opção '5) Deletar TODOS os Dados' primeiro." + ANSI_RESET);
+                System.out.println(ANSI_YELLOW + "   Isso limpará os arquivos corrompidos e permitirá criar dados novos." + ANSI_RESET);
+                return;
+            }
+            
+            System.out.println();
+            executarSeed(animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, 
+                        chatThreadDao, chatMsgDao, numOngs, numVoluntarios, numAdotantes, numAnimais,
+                        numInteresses, numAdocoes, numThreads, numMensagens);
+                        
+            System.out.println("\n" + ANSI_GREEN + "✓ Seed concluído com sucesso!" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "Pressione ENTER para continuar..." + ANSI_RESET);
+            sc.nextLine();
+            
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "✗ Erro ao executar seed: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+    
+    private static int perguntarNumero(Scanner sc, String entidade, int padrao, int min, int max) {
+        System.out.print("  → " + entidade + " [" + ANSI_GREEN + padrao + ANSI_RESET + "]: ");
+        String input = sc.nextLine().trim();
+        if (input.isEmpty()) return padrao;
+        
+        try {
+            int valor = Integer.parseInt(input);
+            if (valor < min || valor > max) {
+                System.out.println(ANSI_YELLOW + "    Valor fora do intervalo [" + min + "-" + max + "]. Usando padrão: " + padrao + ANSI_RESET);
+                return padrao;
+            }
+            return valor;
+        } catch (NumberFormatException e) {
+            System.out.println(ANSI_YELLOW + "    Valor inválido. Usando padrão: " + padrao + ANSI_RESET);
+            return padrao;
+        }
+    }
+    
+    private static void executarSeed(AnimalDataFileDao animalDao, OngDataFileDao ongDao,
+                                    AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao,
+                                    AdocaoDataFileDao adocaoDao, InteresseDataFileDao interesseDao,
+                                    ChatThreadDataFileDao chatThreadDao, ChatMessageDataFileDao chatMsgDao,
+                                    int numOngs, int numVoluntariosPorOng, int numAdotantes, int numAnimaisPorOng,
+                                    int numInteresses, int numAdocoes, int numThreads, int numMensagensPorThread) throws Exception {
+        
+        String[] nomesOng = {"Amor Animal", "Patinhas Felizes", "Amigos de Patas", "Refúgio Animal", "Lar dos Peludos",
+                             "Proteção Pet", "Vida Animal", "Anjos Peludos", "Cantinho dos Bichos", "Adote um Amigo"};
+        String[] nomesVoluntario = {"Ana Silva", "Bruno Costa", "Carla Souza", "Daniel Alves", "Eduarda Lima",
+                                   "Felipe Santos", "Gabriela Rocha", "Henrique Dias", "Isabela Martins", "João Pedro"};
+        String[] nomesAdotante = {"Carlos Alberto", "Mariana Oliveira", "Pedro Henrique", "Juliana Ferreira", "Lucas Gabriel",
+                                 "Amanda Santos", "Rafael Costa", "Beatriz Lima", "Thiago Alves", "Camila Rodrigues"};
+        String[] nomesAnimais = {"Rex", "Luna", "Bob", "Mel", "Thor", "Nina", "Max", "Bella", "Duke", "Mia",
+                                "Zeus", "Lola", "Rocky", "Daisy", "Buddy", "Chloe", "Charlie", "Lucy", "Cooper", "Molly"};
+        String[] descricoes = {"Muito carinhoso e brincalhão", "Calmo e obediente", "Adora brincar com crianças",
+                              "Necessita de espaço para correr", "Ideal para apartamento", "Muito inteligente",
+                              "Companheiro fiel", "Adora carinho", "Muito protetor", "Energético e alegre"};
+        
+        int totalSteps = numOngs + (numOngs * numVoluntariosPorOng) + numAdotantes + (numOngs * numAnimaisPorOng) +
+                        numInteresses + numAdocoes + numThreads + (numThreads * numMensagensPorThread);
+        int currentStep = 0;
+        
+        System.out.println("\n" + ANSI_CYAN + "╔════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "║" + ANSI_RESET + ANSI_BOLD + "                  PROGRESSO DE CRIAÇÃO                    " + ANSI_RESET + ANSI_CYAN + "║" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "╚════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+        System.out.println();
+        
+        java.util.List<Integer> ongIds = new java.util.ArrayList<>();
+        java.util.List<String> cpfsVoluntarios = new java.util.ArrayList<>();
+        java.util.List<String> cpfsAdotantes = new java.util.ArrayList<>();
+        java.util.List<Integer> animalIds = new java.util.ArrayList<>();
+        
+        // 1. Criar ONGs
+        printProgress("Criando ONGs", currentStep, totalSteps);
+        for (int i = 0; i < numOngs; i++) {
+            Ong ong = new Ong();
+            ong.setNome(nomesOng[i % nomesOng.length] + " " + (i + 1));
+            ong.setCnpj(String.format("%02d.%03d.%03d/%04d-%02d", i, i, i, i, i % 100));
+            ong.setEndereco("Rua " + (char)('A' + (i % 26)) + ", " + (100 + i));
+            ong.setTelefone(String.format("(11) 9%04d-%04d", i, i));
+            ong.setAtivo(true);
+            ong = ongDao.create(ong);
+            ongIds.add(ong.getId());
+            currentStep++;
+            printProgress("ONGs criadas: " + (i + 1) + "/" + numOngs, currentStep, totalSteps);
+        }
+        
+        // 2. Criar Voluntários
+        printProgress("Criando Voluntários", currentStep, totalSteps);
+        int volCount = 0;
+        for (int ongIdx = 0; ongIdx < numOngs; ongIdx++) {
+            for (int v = 0; v < numVoluntariosPorOng; v++) {
+                String cpf = String.format("%011d", 10000000000L + volCount);
+                Voluntario vol = new Voluntario();
+                vol.setCpf(cpf);
+                vol.setSenha("senha" + volCount); // DAO criptografa automaticamente
+                vol.setTelefone(String.format("(11) 8%04d-%04d", volCount, volCount));
+                vol.setNome(nomesVoluntario[volCount % nomesVoluntario.length] + " " + volCount);
+                vol.setEndereco("Av. Voluntário, " + volCount);
+                vol.setIdOng(ongIds.get(ongIdx));
+                vol.setCargo(Role.values()[volCount % Role.values().length]);
+                vol.setAtivo(true);
+                voluntarioDao.create(vol);
+                cpfsVoluntarios.add(cpf);
+                volCount++;
+                currentStep++;
+                printProgress("Voluntários criados: " + volCount + "/" + (numOngs * numVoluntariosPorOng), currentStep, totalSteps);
+            }
+        }
+        
+        // 3. Criar Adotantes
+        printProgress("Criando Adotantes", currentStep, totalSteps);
+        for (int i = 0; i < numAdotantes; i++) {
+            String cpf = String.format("%011d", 20000000000L + i);
+            Adotante ad = new Adotante();
+            ad.setCpf(cpf);
+            ad.setSenha("senha" + i); // DAO criptografa automaticamente
+            ad.setTelefone(String.format("(11) 7%04d-%04d", i, i));
+            ad.setNomeCompleto(nomesAdotante[i % nomesAdotante.length] + " " + i);
+            ad.setTipoMoradia(TipoMoradia.values()[i % TipoMoradia.values().length]);
+            ad.setPossuiTelaProtetora(i % 2 == 0);
+            ad.setPossuiOutrosAnimais(i % 3 == 0);
+            ad.setHorasForaDeCasa(4 + (i % 9));
+            ad.setComposicaoFamiliar(ComposicaoFamiliar.values()[i % ComposicaoFamiliar.values().length]);
+            ad.setMotivoAdocao("Companhia e amor aos animais");
+            ad.setCientePossuiResponsavel(true);
+            ad.setCienteCustos(true);
+            ad.setAtivo(true);
+            adotanteDao.create(ad);
+            cpfsAdotantes.add(cpf);
+            currentStep++;
+            if ((i + 1) % 10 == 0 || i == numAdotantes - 1) {
+                printProgress("Adotantes criados: " + (i + 1) + "/" + numAdotantes, currentStep, totalSteps);
+            }
+        }
+        
+        // 4. Criar Animais
+        printProgress("Criando Animais", currentStep, totalSteps);
+        int animalCount = 0;
+        for (int ongIdx = 0; ongIdx < numOngs; ongIdx++) {
+            for (int a = 0; a < numAnimaisPorOng; a++) {
+                Animal animal;
+                if (animalCount % 2 == 0) {
+                    Cachorro cao = new Cachorro();
+                    cao.setRaca("Vira-lata " + animalCount);
+                    cao.setNivelAdestramento(NivelAdestramento.values()[animalCount % NivelAdestramento.values().length]);
+                    animal = cao;
+                } else {
+                    Gato gato = new Gato();
+                    gato.setRaca("SRD " + animalCount);
+                    gato.setSeDaBemComCachorros(animalCount % 2 == 0);
+                    gato.setSeDaBemComGatos(animalCount % 3 != 0);
+                    gato.setSeDaBemComCriancas(animalCount % 2 != 0);
+                    gato.setAcessoExterior(animalCount % 4 == 0);
+                    gato.setPossuiTelamento(animalCount % 3 == 0);
+                    animal = gato;
+                }
+                animal.setIdOng(ongIds.get(ongIdx));
+                animal.setNome(nomesAnimais[animalCount % nomesAnimais.length] + " " + animalCount);
+                animal.setSexo(animalCount % 2 == 0 ? 'M' : 'F');
+                animal.setPorte(Porte.values()[animalCount % Porte.values().length]);
+                animal.setVacinado(animalCount % 3 != 0);
+                animal.setDescricao(descricoes[animalCount % descricoes.length]);
+                animal = animalDao.create(animal);
+                animalIds.add(animal.getId());
+                animalCount++;
+                currentStep++;
+                if (animalCount % 20 == 0 || animalCount == (numOngs * numAnimaisPorOng)) {
+                    printProgress("Animais criados: " + animalCount + "/" + (numOngs * numAnimaisPorOng), currentStep, totalSteps);
+                }
+            }
+        }
+        
+        // 5. Criar Interesses
+        printProgress("Criando Interesses", currentStep, totalSteps);
+        for (int i = 0; i < numInteresses && i < cpfsAdotantes.size() && i < animalIds.size(); i++) {
+            Interesse interesse = new Interesse();
+            interesse.setCpfAdotante(cpfsAdotantes.get(i % cpfsAdotantes.size()));
+            interesse.setIdAnimal(animalIds.get(i % animalIds.size()));
+            interesse.setStatus(InteresseStatus.values()[i % InteresseStatus.values().length]);
+            interesseDao.create(interesse);
+            currentStep++;
+            if ((i + 1) % 10 == 0 || i == numInteresses - 1) {
+                printProgress("Interesses criados: " + (i + 1) + "/" + numInteresses, currentStep, totalSteps);
+            }
+        }
+        
+        // 6. Criar Adoções
+        printProgress("Criando Adoções", currentStep, totalSteps);
+        for (int i = 0; i < numAdocoes && i < cpfsAdotantes.size() && i < animalIds.size(); i++) {
+            Adocao adocao = new Adocao();
+            adocao.setCpfAdotante(cpfsAdotantes.get(i % cpfsAdotantes.size()));
+            adocao.setIdAnimal(animalIds.get(i % animalIds.size()));
+            adocao.setDataAdocao(java.time.LocalDate.now().minusDays(i));
+            adocaoDao.create(adocao);
+            currentStep++;
+            if ((i + 1) % 5 == 0 || i == numAdocoes - 1) {
+                printProgress("Adoções criadas: " + (i + 1) + "/" + numAdocoes, currentStep, totalSteps);
+            }
+        }
+        
+        // 7. Criar Chat Threads
+        printProgress("Criando Conversas", currentStep, totalSteps);
+        java.util.List<Integer> threadIds = new java.util.ArrayList<>();
+        for (int i = 0; i < numThreads && i < cpfsAdotantes.size() && i < animalIds.size(); i++) {
+            ChatThread thread = new ChatThread();
+            thread.setIdAnimal(animalIds.get(i % animalIds.size()));
+            thread.setCpfAdotante(cpfsAdotantes.get(i % cpfsAdotantes.size()));
+            thread.setAberto(i % 3 != 0);
+            thread.setCriadoEm(java.time.LocalDateTime.now().minusDays(i));
+            thread = chatThreadDao.create(thread);
+            threadIds.add(thread.getId());
+            currentStep++;
+            if ((i + 1) % 5 == 0 || i == numThreads - 1) {
+                printProgress("Conversas criadas: " + (i + 1) + "/" + numThreads, currentStep, totalSteps);
+            }
+        }
+        
+        // 8. Criar Mensagens
+        printProgress("Criando Mensagens", currentStep, totalSteps);
+        int msgCount = 0;
+        
+        // Mensagens realistas para conversa de adoção
+        String[] mensagensAdotante = {
+            "Olá! Vi o perfil do animal e fiquei muito interessado.",
+            "Gostaria de saber mais sobre o temperamento dele.",
+            "Ele se dá bem com crianças?",
+            "Qual a idade exata dele?",
+            "Preciso de alguma documentação específica para adoção?",
+            "Obrigado pelas informações! Quando posso visitá-lo?",
+            "Estou muito animado com essa adoção!",
+            "Minha família toda já está preparada para recebê-lo.",
+            "Vocês fornecem algum suporte pós-adoção?",
+            "Posso agendar uma visita para esta semana?"
+        };
+        
+        String[] mensagensVoluntario = {
+            "Olá! Que bom que se interessou! Vou te passar todas as informações.",
+            "Ele é muito dócil e carinhoso, perfeito para famílias.",
+            "Sim, ele convive muito bem com crianças de todas as idades!",
+            "Ele tem aproximadamente 2 anos, está na fase adulta jovem.",
+            "Vou enviar a lista de documentos necessários por aqui mesmo.",
+            "Ótimo! Podemos agendar para qualquer dia desta semana.",
+            "Ficamos muito felizes com seu interesse! Ele merece um lar amoroso.",
+            "Que maravilha! A preparação da família é muito importante.",
+            "Sim, oferecemos suporte completo nos primeiros 6 meses!",
+            "Claro! Qual dia seria melhor para você?"
+        };
+        
+        for (int t = 0; t < threadIds.size(); t++) {
+            for (int m = 0; m < numMensagensPorThread; m++) {
+                ChatMessage msg = new ChatMessage();
+                msg.setThreadId(threadIds.get(t));
+                msg.setSender(m % 2 == 0 ? ChatSender.ADOTANTE : ChatSender.VOLUNTARIO);
+                
+                // Alternar entre mensagens realistas
+                if (m % 2 == 0) {
+                    msg.setConteudo(mensagensAdotante[m % mensagensAdotante.length]);
+                } else {
+                    msg.setConteudo(mensagensVoluntario[m % mensagensVoluntario.length]);
+                }
+                
+                msg.setEnviadoEm(java.time.LocalDateTime.now().minusHours(msgCount));
+                chatMsgDao.create(msg);
+                msgCount++;
+                currentStep++;
+                if (msgCount % 20 == 0 || msgCount == (numThreads * numMensagensPorThread)) {
+                    printProgress("Mensagens criadas: " + msgCount + "/" + (numThreads * numMensagensPorThread), currentStep, totalSteps);
+                }
+            }
+        }
+        
+        printProgress("✓ CONCLUÍDO!", totalSteps, totalSteps);
+        System.out.println();
+    }
+    
+    private static void printProgress(String status, int current, int total) {
+        int barWidth = 50;
+        int progress = (int) ((double) current / total * barWidth);
+        int percentage = (int) ((double) current / total * 100);
+        
+        StringBuilder bar = new StringBuilder(ANSI_CYAN + "[");
+        for (int i = 0; i < barWidth; i++) {
+            if (i < progress) {
+                bar.append(ANSI_GREEN + "█" + ANSI_CYAN);
+            } else {
+                bar.append("░");
+            }
+        }
+        bar.append("]" + ANSI_RESET);
+        
+        System.out.print("\r" + bar + " " + ANSI_BOLD + percentage + "%" + ANSI_RESET + " - " + status + "          ");
+        if (current == total) {
+            System.out.println();
         }
     }
 
@@ -1037,16 +1788,35 @@ public class Interface {
         listZipContents(ZIP_FILE);
     }
 
-    private static void restoreZip() throws IOException {
-        if (!ZIP_FILE.exists()) {
-            System.out.println(ANSI_RED + "Arquivo de backup '" + ZIP_FILE.getPath() + "' não encontrado." + ANSI_RESET);
+    // =================================================================================
+    // BACKUP/RESTORE SIMPLES (SEM COMPRESSÃO) - RESTAURÁVEL
+    // =================================================================================
+    
+    /**
+     * Restaura backup comprimido com LZW
+     */
+    private static void restaurarBackupComprimido() throws IOException {
+        restaurarBackupComprimido(new File("backup.zip"));
+    }
+    
+    private static void restaurarBackupComprimido(File backupFile) throws IOException {
+        if (!backupFile.exists()) {
+            System.out.println(ANSI_RED + "✗ Arquivo backup.zip não encontrado na raiz do projeto!" + ANSI_RESET);
             return;
         }
-        System.out.println(ANSI_BLUE + "Restaurando arquivos de: " + ZIP_FILE.getPath() + ANSI_RESET);
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(ZIP_FILE))) {
+        
+        System.out.println(ANSI_BLUE + "Restaurando backup comprimido de: " + backupFile.getAbsolutePath() + ANSI_RESET);
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(backupFile))) {
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
-                File out = switch (e.getName()) {
+                String entryName = e.getName();
+                
+                // Remover sufixo ".compressed" se presente
+                String cleanName = entryName.endsWith(".compressed") 
+                    ? entryName.substring(0, entryName.length() - ".compressed".length())
+                    : entryName;
+                
+                File out = switch (cleanName) {
                     case ANIMAIS_DATA_FILENAME -> ANIMAIS_DATA_FILE;
                     case ANIMAIS_IDX_FILENAME -> ANIMAIS_IDX_FILE;
                     case ONGS_DATA_FILENAME -> ONGS_DATA_FILE;
@@ -1056,13 +1826,119 @@ public class Interface {
                     case VOLUNTARIOS_DATA_FILENAME -> VOLUNTARIOS_DATA_FILE;
                     case VOLUNTARIOS_IDX_FILENAME -> VOLUNTARIOS_IDX_FILE;
                     case ADOCOES_DATA_FILENAME -> ADOCOES_DATA_FILE;
+                    case ADOCOES_IDX_FILENAME -> ADOCOES_IDX_FILE;
                     case INTERESSES_DATA_FILENAME -> INTERESSES_DATA_FILE;
+                    case INTERESSES_IDX_FILENAME -> INTERESSES_IDX_FILE;
                     case CHAT_THREADS_DATA_FILENAME -> CHAT_THREADS_DATA_FILE;
+                    case CHAT_THREADS_IDX_FILENAME -> CHAT_THREADS_IDX_FILE;
                     case CHAT_MSGS_DATA_FILENAME -> CHAT_MSGS_DATA_FILE;
+                    case CHAT_MSGS_IDX_FILENAME -> CHAT_MSGS_IDX_FILE;
                     default -> null;
                 };
+                
                 if (out != null) {
-                    System.out.println("  -> Restaurando " + out.getName());
+                    System.out.println("  -> Restaurando " + cleanName + " (descomprimindo)");
+                    
+                    // 1. Ler dados comprimidos do ZIP
+                    byte[] dadosComprimidos = zis.readAllBytes();
+                    
+                    // 2. DESCOMPRIMIR - tentar ambos os algoritmos
+                    byte[] dadosOriginais = null;
+                    String algoritmo = null;
+                    
+                    // Tentar LZW primeiro
+                    try {
+                        dadosOriginais = LZW.decodifica(dadosComprimidos);
+                        algoritmo = "LZW";
+                    } catch (Exception exLzw) {
+                        // Se LZW falhar, tentar Huffman
+                        try {
+                            dadosOriginais = Huffman.decodifica(dadosComprimidos);
+                            algoritmo = "Huffman";
+                        } catch (Exception exHuff) {
+                            System.out.println(ANSI_YELLOW + "     ⚠️  Falha ao descomprimir com LZW e Huffman" + ANSI_RESET);
+                            System.out.println(ANSI_YELLOW + "     LZW: " + exLzw.getMessage() + ANSI_RESET);
+                            System.out.println(ANSI_YELLOW + "     Huffman: " + exHuff.getMessage() + ANSI_RESET);
+                            System.out.println(ANSI_YELLOW + "     Salvando dados comprimidos (pode não funcionar)" + ANSI_RESET);
+                            dadosOriginais = dadosComprimidos;
+                            algoritmo = "FALHA";
+                        }
+                    }
+                    
+                    if (!"FALHA".equals(algoritmo)) {
+                        System.out.println("     ✓ " + algoritmo + ": " + dadosComprimidos.length + " bytes → " + dadosOriginais.length + " bytes");
+                    }
+                    
+                    // 3. Salvar arquivo descomprimido
+                    try (FileOutputStream fos = new FileOutputStream(out)) {
+                        fos.write(dadosOriginais);
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+        System.out.println(ANSI_GREEN + "✓ Restauração concluída!" + ANSI_RESET);
+    }
+    
+    private static void backupZipSimples() throws IOException {
+        File backupFile = new File("backup.zip"); // Na RAIZ do projeto
+        System.out.println(ANSI_BLUE + "Criando backup simples (sem compressão)..." + ANSI_RESET);
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(backupFile))) {
+            zipOne(zos, ANIMAIS_DATA_FILE, ANIMAIS_DATA_FILENAME);
+            zipOne(zos, ANIMAIS_IDX_FILE, ANIMAIS_IDX_FILENAME);
+            zipOne(zos, ONGS_DATA_FILE, ONGS_DATA_FILENAME);
+            zipOne(zos, ONGS_IDX_FILE, ONGS_IDX_FILENAME);
+            zipOne(zos, ADOTANTES_DATA_FILE, ADOTANTES_DATA_FILENAME);
+            zipOne(zos, ADOTANTES_IDX_FILE, ADOTANTES_IDX_FILENAME);
+            zipOne(zos, VOLUNTARIOS_DATA_FILE, VOLUNTARIOS_DATA_FILENAME);
+            zipOne(zos, VOLUNTARIOS_IDX_FILE, VOLUNTARIOS_IDX_FILENAME);
+            zipOne(zos, ADOCOES_DATA_FILE, ADOCOES_DATA_FILENAME);
+            zipOne(zos, ADOCOES_IDX_FILE, ADOCOES_IDX_FILENAME);
+            zipOne(zos, INTERESSES_DATA_FILE, INTERESSES_DATA_FILENAME);
+            zipOne(zos, INTERESSES_IDX_FILE, INTERESSES_IDX_FILENAME);
+            zipOne(zos, CHAT_THREADS_DATA_FILE, CHAT_THREADS_DATA_FILENAME);
+            zipOne(zos, CHAT_THREADS_IDX_FILE, CHAT_THREADS_IDX_FILENAME);
+            zipOne(zos, CHAT_MSGS_DATA_FILE, CHAT_MSGS_DATA_FILENAME);
+            zipOne(zos, CHAT_MSGS_IDX_FILE, CHAT_MSGS_IDX_FILENAME);
+        }
+        System.out.println(ANSI_GREEN + "✓ Backup salvo em: " + backupFile.getAbsolutePath() + ANSI_RESET);
+    }
+
+    private static void restoreZipSimples() throws IOException {
+        File backupFile = new File("backup.zip"); // Na RAIZ do projeto
+        if (!backupFile.exists()) {
+            System.out.println(ANSI_RED + "✗ Arquivo backup.zip não encontrado na raiz do projeto!" + ANSI_RESET);
+            return;
+        }
+        
+        System.out.println(ANSI_BLUE + "Restaurando backup de: " + backupFile.getAbsolutePath() + ANSI_RESET);
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(backupFile))) {
+            ZipEntry e;
+            while ((e = zis.getNextEntry()) != null) {
+                String entryName = e.getName();
+                
+                File out = switch (entryName) {
+                    case ANIMAIS_DATA_FILENAME -> ANIMAIS_DATA_FILE;
+                    case ANIMAIS_IDX_FILENAME -> ANIMAIS_IDX_FILE;
+                    case ONGS_DATA_FILENAME -> ONGS_DATA_FILE;
+                    case ONGS_IDX_FILENAME -> ONGS_IDX_FILE;
+                    case ADOTANTES_DATA_FILENAME -> ADOTANTES_DATA_FILE;
+                    case ADOTANTES_IDX_FILENAME -> ADOTANTES_IDX_FILE;
+                    case VOLUNTARIOS_DATA_FILENAME -> VOLUNTARIOS_DATA_FILE;
+                    case VOLUNTARIOS_IDX_FILENAME -> VOLUNTARIOS_IDX_FILE;
+                    case ADOCOES_DATA_FILENAME -> ADOCOES_DATA_FILE;
+                    case ADOCOES_IDX_FILENAME -> ADOCOES_IDX_FILE;
+                    case INTERESSES_DATA_FILENAME -> INTERESSES_DATA_FILE;
+                    case INTERESSES_IDX_FILENAME -> INTERESSES_IDX_FILE;
+                    case CHAT_THREADS_DATA_FILENAME -> CHAT_THREADS_DATA_FILE;
+                    case CHAT_THREADS_IDX_FILENAME -> CHAT_THREADS_IDX_FILE;
+                    case CHAT_MSGS_DATA_FILENAME -> CHAT_MSGS_DATA_FILE;
+                    case CHAT_MSGS_IDX_FILENAME -> CHAT_MSGS_IDX_FILE;
+                    default -> null;
+                };
+                
+                if (out != null) {
+                    System.out.println("  -> Restaurando " + entryName);
                     try (FileOutputStream fos = new FileOutputStream(out)) {
                         zis.transferTo(fos);
                     }
@@ -1070,6 +1946,37 @@ public class Interface {
                 zis.closeEntry();
             }
         }
+        System.out.println(ANSI_GREEN + "✓ Restauração concluída!" + ANSI_RESET);
+    }
+    
+    // =================================================================================
+    // BACKUP/RESTORE COM COMPRESSÃO (NÃO RESTAURÁVEL)
+    // =================================================================================
+    private static void restoreZip() throws IOException {
+        restoreZip(ZIP_FILE);
+    }
+    
+    private static void restoreZip(File backupFile) throws IOException {
+        if (!backupFile.exists()) {
+            System.out.println(ANSI_RED + "Arquivo de backup '" + backupFile.getPath() + "' não encontrado." + ANSI_RESET);
+            return;
+        }
+        System.out.println(ANSI_BLUE + "Restaurando arquivos de: " + backupFile.getPath() + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "⚠️  AVISO: Os dados foram comprimidos mas a descompressão não está implementada!" + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "   Os arquivos .dat.compressed não podem ser restaurados para o formato original." + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "   Por favor, use um backup SEM compressão ou implemente os métodos de descompressão." + ANSI_RESET);
+        
+        // Listar o que tem no backup
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(backupFile))) {
+            ZipEntry e;
+            System.out.println(ANSI_CYAN + "\nArquivos encontrados no backup:" + ANSI_RESET);
+            while ((e = zis.getNextEntry()) != null) {
+                System.out.println("  - " + e.getName() + " (" + e.getSize() + " bytes)");
+                zis.closeEntry();
+            }
+        }
+        
+        System.out.println(ANSI_RED + "\n✗ Restauração CANCELADA - descompressão não implementada!" + ANSI_RESET);
     }
 
     // ================================

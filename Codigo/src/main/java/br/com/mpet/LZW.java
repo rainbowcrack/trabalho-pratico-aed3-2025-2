@@ -69,8 +69,88 @@ public class LZW {
         return vdb.toByteArray();
     }
 
-    // A decodificação não foi solicitada, mas seria necessária para um sistema completo de backup/restore.
-    // public static byte[] decodifica(byte[] dadosComprimidos) { ... }
+    /**
+     * Decodifica dados comprimidos pelo algoritmo LZW
+     */
+    public static byte[] decodifica(byte[] dadosComprimidos) {
+        if (dadosComprimidos == null || dadosComprimidos.length == 0) {
+            return new byte[0];
+        }
+
+        // Converte bytes para lista de índices
+        ArrayList<Integer> indices = byteArrayParaIndices(dadosComprimidos);
+        if (indices.isEmpty()) {
+            return new byte[0];
+        }
+
+        // Inicializa o dicionário com todos os bytes possíveis
+        int dictSize = 256;
+        Map<Integer, String> dicionario = new HashMap<>();
+        for (int i = 0; i < 256; i++) {
+            dicionario.put(i, "" + (char) i);
+        }
+
+        // Lê o primeiro código
+        int codigo = indices.get(0);
+        String w = dicionario.get(codigo);
+        ArrayList<Byte> resultado = new ArrayList<>();
+        
+        // Adiciona os bytes da primeira entrada
+        for (char c : w.toCharArray()) {
+            resultado.add((byte) c);
+        }
+
+        // Processa os códigos restantes
+        for (int i = 1; i < indices.size(); i++) {
+            int k = indices.get(i);
+            String entrada;
+            
+            if (dicionario.containsKey(k)) {
+                entrada = dicionario.get(k);
+            } else if (k == dictSize) {
+                // Caso especial: código ainda não está no dicionário
+                entrada = w + w.charAt(0);
+            } else {
+                throw new IllegalArgumentException("Código LZW inválido: " + k);
+            }
+
+            // Adiciona bytes da entrada ao resultado
+            for (char c : entrada.toCharArray()) {
+                resultado.add((byte) c);
+            }
+
+            // Adiciona nova entrada ao dicionário
+            if (dictSize < MAX_DICIONARIO_SIZE) {
+                dicionario.put(dictSize++, w + entrada.charAt(0));
+            }
+
+            w = entrada;
+        }
+
+        // Converte ArrayList<Byte> para byte[]
+        byte[] saida = new byte[resultado.size()];
+        for (int i = 0; i < resultado.size(); i++) {
+            saida[i] = resultado.get(i);
+        }
+        return saida;
+    }
+
+    private static ArrayList<Integer> byteArrayParaIndices(byte[] bytes) {
+        VetorDeBits vdb = new VetorDeBits(bytes);
+        ArrayList<Integer> indices = new ArrayList<>();
+        int totalBits = bytes.length * 8;
+        
+        for (int bitIndex = 0; bitIndex + BITS_POR_INDICE <= totalBits; bitIndex += BITS_POR_INDICE) {
+            int indice = 0;
+            for (int i = 0; i < BITS_POR_INDICE; i++) {
+                if (vdb.get(bitIndex + i)) {
+                    indice |= (1 << (BITS_POR_INDICE - 1 - i));
+                }
+            }
+            indices.add(indice);
+        }
+        return indices;
+    }
 
     public static void main(String[] args) {
         String frase = "O sabiá não sabia que o sábio sabia que o sabiá não sabia assobiar.";
@@ -84,5 +164,12 @@ public class LZW {
 
         float eficiencia = (1 - (float) dadosComprimidos.length / dadosOriginais.length) * 100;
         System.out.printf("Eficiência: %.2f%%\n", eficiencia);
+        
+        // Testar descompressão
+        System.out.println("\n--- Teste de Descompressão ---");
+        byte[] dadosDescomprimidos = decodifica(dadosComprimidos);
+        String fraseRecuperada = new String(dadosDescomprimidos);
+        System.out.println("Frase recuperada: " + fraseRecuperada);
+        System.out.println("Descompressão " + (frase.equals(fraseRecuperada) ? "✓ OK!" : "✗ FALHOU!"));
     }
 }

@@ -1,26 +1,44 @@
-// Preenche carrossel "Pets em destaque" e ativa animações de scroll
-const featured = [
-  { nome: 'Luna', tag: 'Dócil', img: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=400&q=80' },
-  { nome: 'Thor', tag: 'Brincalhão', img: 'https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=400&q=80' },
-  { nome: 'Mel', tag: 'Vacinada', img: 'https://images.unsplash.com/photo-1518715308788-3005759c41c8?auto=format&fit=crop&w=400&q=80' },
-  { nome: 'Nina', tag: 'Calma', img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=400&q=80' },
-  { nome: 'Bob', tag: 'Companheiro', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=400&q=80' },
-  { nome: 'Mimi', tag: 'Carinhosa', img: 'https://images.unsplash.com/photo-1511044568932-338cba0ad803?auto=format&fit=crop&w=400&q=80' }
-];
+/**
+ * home.js - Landing Page (Refatorado)
+ * 
+ * Carrega pets em destaque do PetService e renderiza dinamicamente.
+ * Usa PetAdapter para transformar dados do Backend em View Models.
+ */
 
-function fillFeatured() {
+/**
+ * Preenche carrossel de pets em destaque
+ */
+async function fillFeatured() {
   const scroller = document.getElementById('featuredPets');
   if (!scroller) return;
-  featured.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'card pet-mini reveal';
-    el.innerHTML = `
-      <img src="${p.img}" alt="${p.nome}">
-      <div class="name">${p.nome}</div>
-      <span class="badge">${p.tag}</span>
-    `;
-    scroller.appendChild(el);
-  });
+
+  try {
+    // Busca pets em destaque do serviço
+    const result = await PetService.getFeaturedPets(6);
+    
+    if (result.success && result.data.length > 0) {
+      // Adapta para mini-cards
+      const featuredPets = PetAdapter.adaptMiniList(result.data);
+      
+      // Renderiza cada card
+      featuredPets.forEach(pet => {
+        const el = document.createElement('div');
+        el.className = 'card pet-mini reveal';
+        el.innerHTML = `
+          <img src="${pet.imagem}" alt="${pet.nome}">
+          <div class="name">${pet.nome}</div>
+          <span class="badge">${pet.tag}</span>
+        `;
+        scroller.appendChild(el);
+      });
+    } else {
+      // Fallback: mensagem se não houver pets
+      scroller.innerHTML = '<p style="padding: 20px; text-align: center;">Nenhum pet em destaque no momento.</p>';
+    }
+  } catch (error) {
+    console.error('Erro ao carregar pets em destaque:', error);
+    scroller.innerHTML = '<p style="padding: 20px; text-align: center;">Erro ao carregar pets.</p>';
+  }
 }
 
 // Scroll reveal simples

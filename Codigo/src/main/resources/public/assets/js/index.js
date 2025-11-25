@@ -1,20 +1,21 @@
-window.pets = [
-    // Dogs 🐶
-    { tipo: 'dog', nome: "Luna", detalhes: "Fêmea • 2 anos • SRD", descricao: "Carinhosa, adora brincar e está pronta para um lar!", imagem: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'dog', nome: "Thor", detalhes: "Macho • 3 anos • Labrador", descricao: "Brincalhão, ama correr e se dá bem com crianças.", imagem: "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'dog', nome: "Mel", detalhes: "Fêmea • 1 ano • Poodle", descricao: "Dócil, gosta de colo e está vacinada.", imagem: "https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'dog', nome: "Bob", detalhes: "Macho • 4 anos • SRD", descricao: "Companheiro e muito leal.", imagem: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'dog', nome: "Nina", detalhes: "Fêmea • 2 anos • Border Collie", descricao: "Energia alta, ótima para atividades.", imagem: "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=60" },
-    // Cats 🐱
-    { tipo: 'cat', nome: "Mimi", detalhes: "Fêmea • 2 anos • SRD", descricao: "Carinhosa, adora janelas de sol.", imagem: "https://images.unsplash.com/photo-1511044568932-338cba0ad803?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'cat', nome: "Zeca", detalhes: "Macho • 3 anos • Siamês", descricao: "Elegante e curioso.", imagem: "https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'cat', nome: "Lola", detalhes: "Fêmea • 1 ano • Persa", descricao: "Calma e dorminhoca.", imagem: "https://images.unsplash.com/photo-1511045999812-7a32f6081c71?auto=format&fit=crop&w=800&q=60" },
-    { tipo: 'cat', nome: "Fred", detalhes: "Macho • 5 anos • SRD", descricao: "Independente e limpinho.", imagem: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=60" }
-];
+/**
+ * index.js - Página de Match (Refatorado)
+ * 
+ * Arquitetura limpa com separação de responsabilidades:
+ * - Dados: PetService (camada de dados mockada)
+ * - Transformação: PetAdapter (converte DTO → View Model)
+ * - Autenticação: SessionManager (controle de login)
+ * - View: Funções de renderização neste arquivo
+ */
 
-window.currentIndex = 0;
+// Estado da aplicação
+let currentPets = []; // Pets carregados do serviço
+let currentIndex = 0; // Índice do pet atual
 
-// Cria corações voando pela tela toda com cor temática
+/**
+ * Cria corações voando pela tela com cor temática
+ * @param {string} color - Cor dos corações
+ */
 function createHearts(color = '#ff3b3b') {
     let heartContainer = document.getElementById('heartContainer');
     if (!heartContainer) {
@@ -25,37 +26,82 @@ function createHearts(color = '#ff3b3b') {
     for (let i = 0; i < 14; i++) {
         const heart = document.createElement('div');
         heart.className = 'flying-heart';
-        // Posição horizontal aleatória na tela
         heart.style.left = `${Math.random() * 100}%`;
-        // Posição vertical inicial aleatória (de baixo para cima)
         heart.style.bottom = `${Math.random() * 40 + 10}px`;
         heart.style.animationDelay = `${Math.random() * 0.3}s`;
-    heart.dataset.color = color;
-    heart.style.color = color;
+        heart.dataset.color = color;
+        heart.style.color = color;
         heartContainer.appendChild(heart);
         setTimeout(() => heart.remove(), 900);
     }
 }
 
-window.renderCard = function renderCard(index) {
+/**
+ * Exibe notificação toast
+ * @param {string} message - Mensagem
+ * @param {string} type - 'success' | 'error' | 'info'
+ */
+function showToast(message, type = 'info') {
+    // Remove toast anterior se existir
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Anima entrada
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove após 3s
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Renderiza card do pet
+ * @param {number} index - Índice do pet no array
+ */
+function renderCard(index) {
     const container = document.getElementById('appContainer');
     container.innerHTML = '';
-    if (index >= pets.length) {
-        container.innerHTML = `<div class="pet-card"><p style="text-align:center;">Não há mais pets para mostrar!</p></div>`;
+
+    // Verifica se acabaram os pets
+    if (index >= currentPets.length) {
+        container.innerHTML = `
+            <div class="pet-card" style="text-align: center; padding: 40px;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+                <h2>Você viu todos os pets disponíveis!</h2>
+                <p style="margin: 20px 0;">Continue voltando para conhecer novos amiguinhos.</p>
+                <button onclick="window.location.reload()" class="action-btn like" style="margin: 20px auto; display: block;">
+                    Recomeçar
+                </button>
+            </div>
+        `;
         return;
     }
-    const pet = pets[index];
+
+    const pet = currentPets[index];
+
     // Ajusta tema por tipo
-    const theme = pet.tipo === 'dog' ? 'dog' : 'cat';
-    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', pet.tema);
+
+    // Cria card
     const card = document.createElement('div');
     card.className = 'pet-card';
     card.innerHTML = `
-        <img class="pet-photo" src="${pet.imagem}" alt="Foto do pet">
+        <img class="pet-photo" src="${pet.imagem}" alt="Foto de ${pet.nome}">
         <div class="pet-info">
-            <span class="pet-name">${pet.nome}</span>
+            <span class="pet-name">${pet.icone} ${pet.nome}</span>
             <span class="pet-details">${pet.detalhes}</span>
             <p class="pet-description">${pet.descricao}</p>
+            <div class="pet-badges">
+                <span class="badge">${pet.tag}</span>
+                <span class="badge">${pet.porte}</span>
+            </div>
         </div>
         <div class="actions">
             <button class="action-btn dislike" title="Não gostei">✖</button>
@@ -64,48 +110,123 @@ window.renderCard = function renderCard(index) {
     `;
     container.appendChild(card);
 
-    // Curtir: anima para direita + corações voando
-    card.querySelector('.like').onclick = () => {
+    // Handler: Curtir (registra interesse)
+    card.querySelector('.like').onclick = async () => {
+        // Desabilita botões durante animação
+        card.querySelectorAll('.action-btn').forEach(btn => btn.disabled = true);
+
+        // Animação de saída
         card.style.transition = "transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.5s";
         card.style.transform = "translateX(400px) rotate(15deg)";
         card.style.opacity = "0";
-        // cor do coração segue o tema atual (cat usa brand1/2 padrão avermelhado, dog usa verde)
-        const color = theme === 'dog' ? '#22c55e' : '#ff3b3b';
+
+        // Corações voando (cor por tema)
+        const color = pet.tema === 'dog' ? '#22c55e' : '#ff3b3b';
         createHearts(color);
+
+        // Registra interesse
+        const cpf = SessionManager.getCurrentCpf();
+        const result = await PetService.registerInterest(cpf, pet.id);
+
+        // Feedback
+        if (result.success) {
+            showToast(result.message, 'success');
+        } else {
+            showToast(result.message, 'error');
+        }
+
+        // Avança para próximo
         setTimeout(() => {
-            window.currentIndex++;
-            window.renderCard(window.currentIndex);
+            currentIndex++;
+            renderCard(currentIndex);
         }, 500);
     };
 
-    // Recusar: anima para esquerda
+    // Handler: Recusar
     card.querySelector('.dislike').onclick = () => {
+        // Animação de saída
         card.style.transition = "transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.5s";
         card.style.transform = "translateX(-400px) rotate(-15deg)";
         card.style.opacity = "0";
+
+        // Avança para próximo
         setTimeout(() => {
-            window.currentIndex++;
-            window.renderCard(window.currentIndex);
+            currentIndex++;
+            renderCard(currentIndex);
         }, 500);
     };
 }
 
-document.addEventListener('DOMContentLoaded', () => window.renderCard(window.currentIndex));
+/**
+ * Inicializa a aplicação
+ */
+async function init() {
+    // 1. PROTEÇÃO DE ROTA - Verifica autenticação
+    if (!SessionManager.isAuthenticated()) {
+        // Salva URL para retornar depois do login
+        sessionStorage.setItem('mpet_return_url', 'match.html');
+        window.location.href = 'login.html';
+        return;
+    }
 
-// CSS para animação dos corações e garantir footer fixo
+    // 2. Busca pets do serviço
+    showToast('Carregando pets...', 'info');
+    
+    try {
+        const result = await PetService.getAvailablePets();
+
+        if (result.success && result.data.length > 0) {
+            // 3. Adapta dados para View Models
+            currentPets = PetAdapter.adaptList(result.data);
+            
+            // 4. Renderiza primeiro card
+            currentIndex = 0;
+            renderCard(currentIndex);
+        } else {
+            // Sem pets disponíveis
+            const container = document.getElementById('appContainer');
+            container.innerHTML = `
+                <div class="pet-card" style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🐾</div>
+                    <h2>Nenhum pet disponível no momento</h2>
+                    <p style="margin: 20px 0;">Volte em breve para conhecer novos amiguinhos!</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar pets:', error);
+        showToast('Erro ao carregar pets. Recarregue a página.', 'error');
+    }
+}
+
+// Inicializa quando DOM estiver pronto
+document.addEventListener('DOMContentLoaded', init);
+
+
+// ========================================
+// ESTILOS INJETADOS
+// ========================================
+
 const style = document.createElement('style');
 style.innerHTML = `
+/* Layout responsivo */
 body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
+
+/* Container de corações */
 #heartContainer {
     position: fixed;
-    left: 0; top: 0; width: 100vw; height: 100vh;
+    left: 0; top: 0; 
+    width: 100vw; 
+    height: 100vh;
     pointer-events: none;
     z-index: 1000;
 }
+
+/* Animação de corações voadores */
 .flying-heart {
     position: absolute;
     font-size: 2.2rem;
@@ -114,11 +235,13 @@ body {
     pointer-events: none;
     z-index: 1001;
 }
+
 .flying-heart::before {
     content: "❤";
     display: block;
     filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
 }
+
 @keyframes flyHeart {
     0% {
         opacity: 1;
@@ -133,10 +256,75 @@ body {
         transform: translateY(-180px) scale(0.8) rotate(-10deg);
     }
 }
+
+/* Badges de informação */
+.pet-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: 4px 12px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    font-weight: 500;
+    z-index: 2000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    max-width: 400px;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-success {
+    border-left: 4px solid #22c55e;
+    color: #166534;
+}
+
+.toast-error {
+    border-left: 4px solid #ef4444;
+    color: #991b1b;
+}
+
+.toast-info {
+    border-left: 4px solid #3b82f6;
+    color: #1e40af;
+}
+
+/* Footer fixo */
 footer {
     margin-top: auto !important;
     position: relative;
     z-index: 2;
+}
+
+/* Responsivo mobile */
+@media (max-width: 768px) {
+    .toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
 }
 `;
 document.head.appendChild(style);

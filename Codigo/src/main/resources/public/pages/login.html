@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MPet</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-theme="dog" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,59,59,0.1) 0%, rgba(255,165,0,0.1) 100%);">
+    
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo">🐾</div>
+                <h1>MPet</h1>
+                <p>Entre para encontrar seu novo melhor amigo</p>
+            </div>
+
+            <!-- Alerta de feedback -->
+            <div id="alertBox" class="alert"></div>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="cpf">CPF ou Usuário</label>
+                    <input 
+                        type="text" 
+                        id="cpf" 
+                        name="cpf" 
+                        placeholder="Digite seu CPF ou 'admin'"
+                        maxlength="14"
+                        required
+                        autocomplete="username"
+                    >
+                    <div class="cpf-hint">Digite apenas os números do seu CPF ou 'admin' para acesso administrativo</div>
+                    <div id="cpfError" class="error-message"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        name="senha" 
+                        placeholder="••••••••"
+                        required
+                        autocomplete="current-password"
+                    >
+                    <div id="senhaError" class="error-message"></div>
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin">
+                    Entrar
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Ainda não tem conta? <a href="#" id="linkCadastro">Cadastre-se</a></p>
+                <p style="margin-top: 15px;">
+                    <a href="../index.html">← Voltar para home</a>
+                </p>
+            </div>
+
+            <!-- Mensagem de teste -->
+            <div class="dev-hint">
+                <strong>🧪 Ambiente de Desenvolvimento</strong><br><br>
+                <div><strong>Admin:</strong> usuário: <code>admin</code> | senha: <code>admin</code></div>
+                <div><strong>Adotante:</strong> CPF: <code>12345678901</code> | senha: <code>123</code></div>
+                <div><strong>Voluntário:</strong> CPF: <code>11111111111</code> | senha: <code>123</code></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: Ordem CRÍTICA -->
+    <script src="../assets/js/models.js"></script>
+    <script src="../assets/js/auth/sessionManager.js"></script>
+    <script src="../assets/js/auth/router.js"></script>
+    <script>
+        // Máscara de CPF (ignora se for "admin")
+        const cpfInput = document.getElementById('cpf');
+        cpfInput.addEventListener('input', function(e) {
+            let value = e.target.value;
+            
+            // Se começar com letra, deixa como texto livre (para "admin")
+            if (/^[a-zA-Z]/.test(value)) {
+                return;
+            }
+            
+            // Senão, aplica máscara de CPF
+            value = value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        // Elementos do DOM
+        const loginForm = document.getElementById('loginForm');
+        const btnLogin = document.getElementById('btnLogin');
+        const alertBox = document.getElementById('alertBox');
+        const linkCadastro = document.getElementById('linkCadastro');
+
+        /**
+         * Exibe alerta de feedback
+         */
+        function showAlert(message, type = 'error') {
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type} show`;
+            
+            // Auto-esconde após 5s
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 5000);
+        }
+
+        /**
+         * Alterna estado de loading no botão
+         */
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnLogin.disabled = true;
+                btnLogin.innerHTML = '<span class="loading-spinner"></span>Entrando...';
+            } else {
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = 'Entrar';
+            }
+        }
+
+        /**
+         * Manipula submissão do formulário
+         */
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Limpa erros anteriores
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+            alertBox.classList.remove('show');
+
+            // Captura valores
+            const cpfRaw = cpfInput.value.trim();
+            const cpf = cpfRaw.toLowerCase() === 'admin' ? 'admin' : cpfRaw.replace(/\D/g, '');
+            const senha = document.getElementById('senha').value;
+
+            // Validações básicas
+            let hasError = false;
+
+            if (!cpf || (cpf !== 'admin' && cpf.length !== 11)) {
+                document.getElementById('cpfError').textContent = 'Digite um CPF válido ou "admin"';
+                document.getElementById('cpfError').classList.add('show');
+                cpfInput.classList.add('error');
+                hasError = true;
+            }
+
+            if (!senha || senha.length < 3) {
+                document.getElementById('senhaError').textContent = 'Senha muito curta';
+                document.getElementById('senhaError').classList.add('show');
+                document.getElementById('senha').classList.add('error');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // Tenta fazer login
+            setLoading(true);
+
+            try {
+                const result = await SessionManager.login(cpf, senha);
+
+                if (result.success) {
+                    showAlert(`${result.message} Redirecionando...`, 'success');
+                    
+                    // Aguarda 800ms e redireciona
+                    setTimeout(() => {
+                        SessionManager.returnToSavedUrl();
+                    }, 800);
+                } else {
+                    showAlert(result.message, 'error');
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showAlert('Erro ao processar login. Tente novamente.', 'error');
+                setLoading(false);
+            }
+        });
+
+        /**
+         * Link de cadastro (placeholder)
+         */
+        linkCadastro.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAlert('Funcionalidade de cadastro em desenvolvimento. Use um usuário de teste.', 'error');
+        });
+
+        /**
+         * Verifica se já está logado
+         */
+        window.addEventListener('DOMContentLoaded', function() {
+            if (SessionManager.isAuthenticated()) {
+                showAlert('Você já está logado! Redirecionando...', 'success');
+                setTimeout(() => {
+                    SessionManager.returnToSavedUrl();
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

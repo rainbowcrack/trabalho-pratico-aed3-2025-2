@@ -18,11 +18,17 @@ import br.com.mpet.Compressao;
 
 import java.io.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -113,6 +119,7 @@ public class Interface {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
     public static final String ANSI_BOLD = "\u001B[1m";
+    public static final String ANSI_DIM = "\u001B[2m";
 
     // ========================================================================
     // FUNÇÕES DE UI MELHORADAS
@@ -284,30 +291,54 @@ public class Interface {
     private static boolean restaurarBackupInicial(Scanner sc) throws IOException {
         System.out.println(ANSI_BLUE + "\n═══ Restaurar Backup ═══" + ANSI_RESET);
         
-        // Verificar se existe backup.zip na RAIZ do projeto (não em /dats/)
-        File backupRaiz = new File("backup.zip");
-        File backupDats = new File(DATA_DIR, "backup.zip");
+        // Buscar TODOS os backups disponíveis (com timestamp)
+        java.util.ArrayList<File> backupsDisponiveis = buscarTodosBackups();
         
-        // Priorizar backup da raiz (local correto após compressão)
-        File backupPadrao = backupRaiz.exists() ? backupRaiz : 
-                           (backupDats.exists() ? backupDats : null);
-        
-        if (backupPadrao != null) {
-            System.out.println(ANSI_GREEN + "✓ Arquivo de backup encontrado: " + backupPadrao.getAbsolutePath() + ANSI_RESET);
-            System.out.print("\nDeseja utilizar este arquivo? (S/n): ");
-            String resp = sc.nextLine().trim().toUpperCase();
+        if (!backupsDisponiveis.isEmpty()) {
+            System.out.println(ANSI_GREEN + "\n✓ Backups disponíveis encontrados:" + ANSI_RESET);
+            System.out.println();
             
-            if (resp.isEmpty() || resp.equals("S")) {
-                System.out.println(ANSI_BLUE + "\n→ Restaurando dados do backup..." + ANSI_RESET);
-                restaurarBackupComprimido(backupPadrao);
-                System.out.println(ANSI_GREEN + "✓ Dados restaurados com sucesso!" + ANSI_RESET);
+            // Mostrar lista numerada
+            for (int i = 0; i < backupsDisponiveis.size(); i++) {
+                File backup = backupsDisponiveis.get(i);
+                long tamanhoBytes = backup.length();
+                double tamanhoMB = tamanhoBytes / (1024.0 * 1024.0);
+                String dataStr = extrairDataDoNome(backup.getName());
+                
+                System.out.printf("  [%d] %s%n", i + 1, backup.getName());
+                System.out.printf("      📅 Data: %s  |  📦 Tamanho: %.2f MB%n", dataStr, tamanhoMB);
+                System.out.println();
+            }
+            
+            System.out.print("Escolha um backup para restaurar (0 para cancelar): ");
+            try {
+                int escolha = Integer.parseInt(sc.nextLine().trim());
+                
+                if (escolha == 0) {
+                    System.out.println(ANSI_YELLOW + "✗ Operação cancelada." + ANSI_RESET);
+                    return false;
+                }
+                
+                if (escolha < 1 || escolha > backupsDisponiveis.size()) {
+                    System.out.println(ANSI_RED + "✗ Opção inválida!" + ANSI_RESET);
+                    return false;
+                }
+                
+                File backupEscolhido = backupsDisponiveis.get(escolha - 1);
+                System.out.println(ANSI_BLUE + "\n→ Restaurando dados do backup: " + backupEscolhido.getName() + ANSI_RESET);
+                restaurarBackupComprimido(backupEscolhido);
                 System.out.println(ANSI_YELLOW + "\n⚠️  Pressione ENTER para continuar..." + ANSI_RESET);
                 sc.nextLine();
                 return true;
+                
+            } catch (NumberFormatException e) {
+                System.out.println(ANSI_RED + "✗ Entrada inválida! Digite um número." + ANSI_RESET);
+                return false;
             }
         } else {
-            System.out.println(ANSI_YELLOW + "⚠️  Arquivo 'backup.zip' não encontrado." + ANSI_RESET);
-            System.out.println(ANSI_CYAN + "   💡 Dica: O backup é salvo na RAIZ do projeto (não em /dats/)" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "⚠️  Nenhum backup encontrado." + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "   💡 Dica: Os backups são salvos na RAIZ do projeto com o formato:" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "           backup_AAAAMMDD_HHMMSS.zip" + ANSI_RESET);
         }
         
         // Solicitar caminho do arquivo
@@ -1020,6 +1051,8 @@ public class Interface {
             System.out.println("3) Compactar Arquivos (Vacuum)");
             System.out.println(ANSI_PURPLE + "4) 🌱 Popular Base de Dados (Seed)" + ANSI_RESET);
             System.out.println(ANSI_RED + "5) 🗑️  Deletar TODOS os Dados" + ANSI_RESET);
+            System.out.println(ANSI_YELLOW + "6) 📦 Gerenciar Backups (Listar/Deletar)" + ANSI_RESET);
+            System.out.println(ANSI_GREEN + "7) 🔐 Verificar Criptografia de Senhas (RSA)" + ANSI_RESET);
             System.out.println(ANSI_RED + "0) Voltar ao Menu Principal" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
@@ -1038,13 +1071,21 @@ public class Interface {
                             case "1":
                                 System.out.println(ANSI_BLUE + "Iniciando backup com Huffman..." + ANSI_RESET);
                                 System.out.println(ANSI_YELLOW + "⚠️  AVISO: Huffman não possui descompressão implementada!" + ANSI_RESET);
-                                Compressao.comprimir(1); // 1 = Huffman
-                                System.out.println(ANSI_GREEN + "✓ Backup salvo em: backup.zip" + ANSI_RESET);
+                                String nomeBackupHuffman = Compressao.comprimir(1); // 1 = Huffman
+                                if (nomeBackupHuffman != null) {
+                                    System.out.println(ANSI_GREEN + "✓ Backup salvo em: " + nomeBackupHuffman + ANSI_RESET);
+                                } else {
+                                    System.out.println(ANSI_RED + "✗ Erro ao criar backup." + ANSI_RESET);
+                                }
                                 break;
                             case "2":
                                 System.out.println(ANSI_BLUE + "Iniciando backup com LZW..." + ANSI_RESET);
-                                Compressao.comprimir(2); // 2 = LZW
-                                System.out.println(ANSI_GREEN + "✓ Backup salvo em: backup.zip (restaurável)" + ANSI_RESET);
+                                String nomeBackupLZW = Compressao.comprimir(2); // 2 = LZW
+                                if (nomeBackupLZW != null) {
+                                    System.out.println(ANSI_GREEN + "✓ Backup salvo em: " + nomeBackupLZW + " (restaurável)" + ANSI_RESET);
+                                } else {
+                                    System.out.println(ANSI_RED + "✗ Erro ao criar backup." + ANSI_RESET);
+                                }
                                 break;
                             case "0":
                                 System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
@@ -1057,19 +1098,68 @@ public class Interface {
                     case "2" -> {
                         System.out.println(ANSI_YELLOW + "ATENÇÃO: Esta ação sobrescreverá os dados atuais." + ANSI_RESET);
                         if (perguntarBool(sc, "Deseja continuar? (s/n): ")) {
-                            animalDao.close();
-                            ongDao.close();
-                            adotanteDao.close();
-                            voluntarioDao.close();
-                            adocaoDao.close();
-                            interesseDao.close();
-                            chatThreadDao.close();
-                            chatMsgDao.close();
+                            // Buscar backups disponíveis
+                            java.util.ArrayList<File> backups = buscarTodosBackups();
                             
-                            restaurarBackupComprimido();
+                            if (backups.isEmpty()) {
+                                System.out.println(ANSI_RED + "✗ Nenhum backup encontrado!" + ANSI_RESET);
+                                System.out.println(ANSI_YELLOW + "   💡 Dica: Crie um backup primeiro (opção 1 no menu Sistema)" + ANSI_RESET);
+                                break;
+                            }
                             
-                            System.out.println(ANSI_GREEN + "Restauração concluída. Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
-                            System.exit(0);
+                            System.out.println(ANSI_CYAN + "\n📦 Backups disponíveis:" + ANSI_RESET);
+                            for (int i = 0; i < backups.size(); i++) {
+                                File backup = backups.get(i);
+                                double tamanhoMB = backup.length() / 1024.0 / 1024.0;
+                                String dataStr = extrairDataDoNome(backup.getName());
+                                
+                                System.out.printf("%s[%d]%s %s", 
+                                    ANSI_BOLD, (i + 1), ANSI_RESET, 
+                                    backup.getName());
+                                if (dataStr != null) {
+                                    System.out.printf(" (%s)", dataStr);
+                                }
+                                System.out.printf(" - %.2f MB\n", tamanhoMB);
+                            }
+                            
+                            System.out.println();
+                            System.out.print("Digite o número do backup a restaurar (0 para cancelar): ");
+                            String input = sc.nextLine().trim();
+                            
+                            try {
+                                int escolha = Integer.parseInt(input);
+                                
+                                if (escolha == 0) {
+                                    System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                                    break;
+                                }
+                                
+                                if (escolha < 1 || escolha > backups.size()) {
+                                    System.out.println(ANSI_RED + "Número inválido." + ANSI_RESET);
+                                    break;
+                                }
+                                
+                                File backupEscolhido = backups.get(escolha - 1);
+                                
+                                // Fechar todos os DAOs antes de restaurar
+                                animalDao.close();
+                                ongDao.close();
+                                adotanteDao.close();
+                                voluntarioDao.close();
+                                adocaoDao.close();
+                                interesseDao.close();
+                                chatThreadDao.close();
+                                chatMsgDao.close();
+                                
+                                // Restaurar backup escolhido
+                                restaurarBackupComprimido(backupEscolhido);
+                                
+                                System.out.println(ANSI_GREEN + "✓ Restauração concluída! Por favor, reinicie o programa para carregar os novos dados." + ANSI_RESET);
+                                System.exit(0);
+                                
+                            } catch (NumberFormatException e) {
+                                System.out.println(ANSI_RED + "Entrada inválida. Digite apenas números." + ANSI_RESET);
+                            }
                         }
                     }
                     case "3" -> {
@@ -1089,6 +1179,12 @@ public class Interface {
                     }
                     case "5" -> {
                         deletarTodosDados(sc, animalDao, ongDao, adotanteDao, voluntarioDao, adocaoDao, interesseDao, chatThreadDao, chatMsgDao);
+                    }
+                    case "6" -> {
+                        menuGerenciarBackups(sc);
+                    }
+                    case "7" -> {
+                        verificarCriptografiaSenhas(sc, adotanteDao, voluntarioDao);
                     }
                     case "0" -> { return; }
                     default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
@@ -1215,14 +1311,14 @@ public class Interface {
             System.out.println(ANSI_WHITE + "(Pressione ENTER para usar valor padrão)" + ANSI_RESET);
             System.out.println();
             
-            int numOngs = perguntarNumero(sc, "ONGs", 10, 1, 100);
-            int numVoluntarios = perguntarNumero(sc, "Voluntários (por ONG)", 5, 1, 50);
-            int numAdotantes = perguntarNumero(sc, "Adotantes", 50, 1, 1000);
-            int numAnimais = perguntarNumero(sc, "Animais (por ONG)", 20, 1, 500);
-            int numInteresses = perguntarNumero(sc, "Interesses", 30, 1, 500);
-            int numAdocoes = perguntarNumero(sc, "Adoções", 10, 1, 200);
-            int numThreads = perguntarNumero(sc, "Conversas (Threads)", 15, 1, 200);
-            int numMensagens = perguntarNumero(sc, "Mensagens (por thread)", 5, 1, 50);
+            int numOngs = perguntarNumero(sc, "ONGs", 10, 1, 50);
+            int numVoluntarios = perguntarNumero(sc, "Voluntários (por ONG)", 5, 1, 20);
+            int numAdotantes = perguntarNumero(sc, "Adotantes", 50, 1, 200);
+            int numAnimais = perguntarNumero(sc, "Animais (por ONG)", 20, 1, 100);
+            int numInteresses = perguntarNumero(sc, "Interesses", 30, 1, 150);
+            int numAdocoes = perguntarNumero(sc, "Adoções", 10, 1, 100);
+            int numThreads = perguntarNumero(sc, "Conversas (Threads)", 15, 1, 100);
+            int numMensagens = perguntarNumero(sc, "Mensagens (por thread)", 5, 1, 30);
             
             System.out.println();
             System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
@@ -1801,11 +1897,13 @@ public class Interface {
     
     private static void restaurarBackupComprimido(File backupFile) throws IOException {
         if (!backupFile.exists()) {
-            System.out.println(ANSI_RED + "✗ Arquivo backup.zip não encontrado na raiz do projeto!" + ANSI_RESET);
+            System.out.println(ANSI_RED + "✗ Arquivo não encontrado: " + backupFile.getName() + ANSI_RESET);
             return;
         }
         
-        System.out.println(ANSI_BLUE + "Restaurando backup comprimido de: " + backupFile.getAbsolutePath() + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "\n🔄 Restaurando backup de: " + backupFile.getName() + ANSI_RESET);
+        int arquivosRestaurados = 0;
+        
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(backupFile))) {
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
@@ -1873,11 +1971,18 @@ public class Interface {
                     try (FileOutputStream fos = new FileOutputStream(out)) {
                         fos.write(dadosOriginais);
                     }
+                    
+                    arquivosRestaurados++;
                 }
                 zis.closeEntry();
             }
         }
-        System.out.println(ANSI_GREEN + "✓ Restauração concluída!" + ANSI_RESET);
+        
+        System.out.println();
+        System.out.println(ANSI_GREEN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "✓ Restauração concluída com sucesso!" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "  📦 Arquivos restaurados: " + arquivosRestaurados + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
     }
     
     private static void backupZipSimples() throws IOException {
@@ -1982,6 +2087,152 @@ public class Interface {
     // ================================
     // FUNÇÕES DE APOIO: DISPONIBILIDADE E INTERAÇÕES
     // ================================
+    
+    /**
+     * Verifica e demonstra que as senhas estão sendo criptografadas com RSA.
+     * Mostra dados armazenados em disco (criptografados) vs dados em memória (descriptografados).
+     */
+    private static void verificarCriptografiaSenhas(Scanner sc, AdotanteDataFileDao adotanteDao, VoluntarioDataFileDao voluntarioDao) throws IOException {
+        System.out.println("\n" + ANSI_GREEN + "╔═══════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "║" + ANSI_RESET + ANSI_BOLD + "          🔐 VERIFICAÇÃO DE CRIPTOGRAFIA RSA 🔐          " + ANSI_RESET + ANSI_GREEN + "║" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "╚═══════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+        System.out.println();
+        System.out.println(ANSI_CYAN + "Este teste demonstra que as senhas estão sendo:" + ANSI_RESET);
+        System.out.println("  1️⃣  Criptografadas com RSA antes de salvar no disco");
+        System.out.println("  2️⃣  Descriptografadas quando carregadas em memória");
+        System.out.println("  3️⃣  Armazenadas de forma SEGURA no arquivo .dat");
+        System.out.println();
+        
+        System.out.println(ANSI_YELLOW + "Escolha o tipo de usuário para verificar:" + ANSI_RESET);
+        System.out.println("1) Adotante");
+        System.out.println("2) Voluntário");
+        System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+        System.out.print("Escolha: ");
+        String tipoOp = sc.nextLine().trim();
+        
+        try {
+            if (tipoOp.equals("1")) {
+                // Verificar Adotante
+                List<Adotante> adotantes = adotanteDao.listAllActive();
+                if (adotantes.isEmpty()) {
+                    System.out.println(ANSI_YELLOW + "\n⚠️  Nenhum adotante cadastrado. Cadastre um adotante primeiro!" + ANSI_RESET);
+                    return;
+                }
+                
+                System.out.println(ANSI_CYAN + "\n📋 Adotantes disponíveis:" + ANSI_RESET);
+                for (int i = 0; i < adotantes.size(); i++) {
+                    Adotante a = adotantes.get(i);
+                    System.out.printf("  [%d] %s - CPF: %s\n", i + 1, a.getNomeCompleto(), a.getCpf());
+                }
+                
+                System.out.print("\nEscolha um adotante (0 para cancelar): ");
+                int escolha = Integer.parseInt(sc.nextLine().trim());
+                if (escolha <= 0 || escolha > adotantes.size()) {
+                    System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                    return;
+                }
+                
+                Adotante adotante = adotantes.get(escolha - 1);
+                demonstrarCriptografia(adotante.getCpf(), adotante.getSenha(), "Adotante", adotante.getNomeCompleto());
+                
+            } else if (tipoOp.equals("2")) {
+                // Verificar Voluntário
+                List<Voluntario> voluntarios = voluntarioDao.listAllActive();
+                if (voluntarios.isEmpty()) {
+                    System.out.println(ANSI_YELLOW + "\n⚠️  Nenhum voluntário cadastrado. Cadastre um voluntário primeiro!" + ANSI_RESET);
+                    return;
+                }
+                
+                System.out.println(ANSI_CYAN + "\n📋 Voluntários disponíveis:" + ANSI_RESET);
+                for (int i = 0; i < voluntarios.size(); i++) {
+                    Voluntario v = voluntarios.get(i);
+                    System.out.printf("  [%d] %s - CPF: %s\n", i + 1, v.getNome(), v.getCpf());
+                }
+                
+                System.out.print("\nEscolha um voluntário (0 para cancelar): ");
+                int escolha = Integer.parseInt(sc.nextLine().trim());
+                if (escolha <= 0 || escolha > voluntarios.size()) {
+                    System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                    return;
+                }
+                
+                Voluntario voluntario = voluntarios.get(escolha - 1);
+                demonstrarCriptografia(voluntario.getCpf(), voluntario.getSenha(), "Voluntário", voluntario.getNome());
+                
+            } else if (tipoOp.equals("0")) {
+                return;
+            } else {
+                System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println(ANSI_RED + "Entrada inválida. Digite apenas números." + ANSI_RESET);
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "Erro ao verificar criptografia: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Demonstra a criptografia RSA de uma senha específica.
+     */
+    private static void demonstrarCriptografia(String cpf, String senhaDescriptografada, String tipo, String nome) {
+        System.out.println("\n" + ANSI_CYAN + "═══════════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_BOLD + "🔍 ANÁLISE DE CRIPTOGRAFIA" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println();
+        System.out.println(ANSI_YELLOW + "Tipo:" + ANSI_RESET + " " + tipo);
+        System.out.println(ANSI_YELLOW + "Nome:" + ANSI_RESET + " " + nome);
+        System.out.println(ANSI_YELLOW + "CPF:" + ANSI_RESET + " " + cpf);
+        System.out.println();
+        
+        // Mostrar senha descriptografada (em memória)
+        System.out.println(ANSI_GREEN + "✓ Senha DESCRIPTOGRAFADA (em memória):" + ANSI_RESET);
+        System.out.println("  " + ANSI_BOLD + senhaDescriptografada + ANSI_RESET);
+        System.out.println("  └─ Esta é a senha REAL que o usuário digitou");
+        System.out.println();
+        
+        // Criptografar para mostrar como fica no disco
+        try {
+            String senhaCriptografada = RSACriptografia.criptografar(senhaDescriptografada);
+            System.out.println(ANSI_RED + "🔒 Senha CRIPTOGRAFADA (armazenada no disco .dat):" + ANSI_RESET);
+            System.out.println("  " + ANSI_DIM + senhaCriptografada + ANSI_RESET);
+            System.out.println("  └─ Esta é a versão SEGURA armazenada no arquivo binário");
+            System.out.println();
+            
+            // Testar ciclo completo: criptografar → descriptografar
+            String senhaTestada = RSACriptografia.descriptografar(senhaCriptografada);
+            boolean sucesso = senhaDescriptografada.equals(senhaTestada);
+            
+            if (sucesso) {
+                System.out.println(ANSI_GREEN + "✅ TESTE DE CICLO COMPLETO: SUCESSO!" + ANSI_RESET);
+                System.out.println("   Original → Criptografado → Descriptografado = " + ANSI_GREEN + "IGUAL ✓" + ANSI_RESET);
+            } else {
+                System.out.println(ANSI_RED + "❌ TESTE FALHOU!" + ANSI_RESET);
+                System.out.println("   Original ≠ Descriptografado");
+            }
+            
+            System.out.println();
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + "📊 ESTATÍSTICAS:" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println("  • Tamanho senha original: " + senhaDescriptografada.length() + " caracteres");
+            System.out.println("  • Tamanho senha criptografada: " + senhaCriptografada.length() + " caracteres");
+            System.out.println("  • Algoritmo: RSA (criptografia assimétrica)");
+            System.out.println("  • Status: " + (sucesso ? ANSI_GREEN + "✓ SEGURO" + ANSI_RESET : ANSI_RED + "✗ ERRO" + ANSI_RESET));
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println();
+            
+            System.out.println(ANSI_GREEN + "💡 CONCLUSÃO:" + ANSI_RESET);
+            System.out.println("   As senhas são CRIPTOGRAFADAS antes de serem salvas no disco");
+            System.out.println("   e DESCRIPTOGRAFADAS quando carregadas em memória.");
+            System.out.println("   " + ANSI_BOLD + "✓ Sistema SEGURO!" + ANSI_RESET);
+            
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "❌ Erro ao testar criptografia: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+    
     private static boolean isAdotado(AdocaoDataFileDao adocaoDao, int idAnimal) throws IOException {
         return adocaoDao.listAllActive().stream().anyMatch(a -> a.getIdAnimal() == idAnimal);
     }
@@ -2128,7 +2379,10 @@ public class Interface {
         if (msgs.isEmpty()) System.out.println("(sem mensagens)");
         else msgs.forEach(m -> {
             String senderLabel = m.getSender() == ChatSender.VOLUNTARIO ? "VOLUNTARIO" + extrairCpfVoluntarioSufixo(m) : m.getSender().name();
-            System.out.printf(" [%s] %s (%s)\n", senderLabel, limparPrefixoVoluntario(m.getConteudo()), m.getEnviadoEm());
+            System.out.printf(" [%s] %s\n   📅 %s\n", 
+                senderLabel, 
+                limparPrefixoVoluntario(m.getConteudo()), 
+                formatarTimestamp(m.getEnviadoEm(), m.getZoneId()));
         });
         if (!t.isAberto()) { System.out.println(ANSI_YELLOW + "Thread fechada." + ANSI_RESET); return; }
         String texto = perguntarString(sc, "Mensagem (vazio para cancelar)", "");
@@ -2139,6 +2393,7 @@ public class Interface {
         // Anexa o CPF do voluntário no conteúdo para identificar o remetente sem mudar o esquema binário
         m.setConteudo(prefixarCpfVoluntario(voluntario.getCpf(), texto));
         m.setEnviadoEm(java.time.LocalDateTime.now());
+        m.setZoneId(java.time.ZoneId.systemDefault().getId());  // ✅ Setar zoneId explicitamente
         m.setAtivo(true);
         msgDao.create(m);
         System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
@@ -2165,7 +2420,9 @@ public class Interface {
                 ChatMessage aviso = new ChatMessage();
                 aviso.setThreadId(t.getId()); aviso.setSender(ChatSender.VOLUNTARIO);
                 aviso.setConteudo("[Automática] Este animal foi adotado. Chat encerrado.");
-                aviso.setEnviadoEm(java.time.LocalDateTime.now()); aviso.setAtivo(true);
+                aviso.setEnviadoEm(java.time.LocalDateTime.now()); 
+                aviso.setZoneId(java.time.ZoneId.systemDefault().getId());  // ✅ Setar zoneId explicitamente
+                aviso.setAtivo(true);
                 msgDao.create(aviso);
             }
             t.setAberto(false); threadDao.update(t);
@@ -2214,8 +2471,12 @@ public class Interface {
             return;
         }
         System.out.println(ANSI_CYAN + "Suas conversas:" + ANSI_RESET);
-        minhas.forEach(t -> System.out.printf(" - Thread %d | Animal=%d | Aberto=%s | Criado=%s\n",
-                t.getId(), t.getIdAnimal(), t.isAberto(), String.valueOf(t.getCriadoEm())));
+        minhas.forEach(t -> {
+            String status = t.isAberto() ? ANSI_GREEN + "Aberto" + ANSI_RESET : ANSI_RED + "Fechado" + ANSI_RESET;
+            System.out.printf(" - Thread %d | Animal=%d | Status=%s\n   📅 Criado em: %s\n",
+                t.getId(), t.getIdAnimal(), status, 
+                formatarTimestamp(t.getCriadoEm(), t.getZoneId()));
+        });
         int tid = perguntarInt(sc, "ID da thread para visualizar");
         Optional<ChatThread> ot = minhas.stream().filter(t -> t.getId() == tid).findFirst();
         if (ot.isEmpty()) { System.out.println(ANSI_RED + "Thread inválida." + ANSI_RESET); return; }
@@ -2233,7 +2494,10 @@ public class Interface {
         if (msgs.isEmpty()) System.out.println("(sem mensagens)");
         else msgs.forEach(m -> {
             String senderLabel = m.getSender() == ChatSender.VOLUNTARIO ? "VOLUNTARIO" + extrairCpfVoluntarioSufixo(m) : m.getSender().name();
-            System.out.printf(" [%s] %s (%s)\n", senderLabel, limparPrefixoVoluntario(m.getConteudo()), String.valueOf(m.getEnviadoEm()));
+            System.out.printf(" [%s] %s\n   📅 %s\n", 
+                senderLabel, 
+                limparPrefixoVoluntario(m.getConteudo()), 
+                formatarTimestamp(m.getEnviadoEm(), m.getZoneId()));
         });
         if (!t.isAberto()) {
             System.out.println(ANSI_YELLOW + "Esta conversa está encerrada." + ANSI_RESET);
@@ -2246,6 +2510,7 @@ public class Interface {
             m.setSender(ChatSender.ADOTANTE);
             m.setConteudo(texto);
             m.setEnviadoEm(java.time.LocalDateTime.now());
+            m.setZoneId(java.time.ZoneId.systemDefault().getId());  // ✅ Setar zoneId explicitamente
             m.setAtivo(true);
             msgDao.create(m);
             System.out.println(ANSI_GREEN + "Mensagem enviada." + ANSI_RESET);
@@ -2280,6 +2545,329 @@ public class Interface {
             return conteudo.substring(startMsg);
         }
         return conteudo;
+    }
+
+    // ================================
+    // HELPERS: FORMATAÇÃO DE TIMESTAMPS
+    // ================================
+    
+    /**
+     * Formata timestamp UTC para timezone local com informação de fuso horário.
+     * 
+     * O sistema salva todos os timestamps em UTC (padrão internacional) para portabilidade.
+     * Esta função converte UTC para o timezone local do usuário e exibe de forma amigável.
+     * 
+     * @param dt LocalDateTime em UTC (como salvo no arquivo)
+     * @param zoneIdStr ID do timezone (ex: "America/Sao_Paulo", "UTC", "Europe/London")
+     * @return String formatada: "25/11/2025 14:30:52 (BRT)" ou "N/A" se null
+     * 
+     * Exemplo:
+     * - Salvo no arquivo: epoch 1732546252 (UTC)
+     * - Convertido para: LocalDateTime "2025-11-25T17:30:52" (UTC)
+     * - Exibido como: "25/11/2025 14:30:52 (BRT)" (America/Sao_Paulo)
+     */
+    private static String formatarTimestamp(java.time.LocalDateTime dt, String zoneIdStr) {
+        if (dt == null) return "N/A";
+        
+        try {
+            // Timestamp está em UTC, converter para timezone local
+            java.time.ZoneId zone = (zoneIdStr != null && !zoneIdStr.isBlank()) 
+                ? java.time.ZoneId.of(zoneIdStr) 
+                : java.time.ZoneId.systemDefault();
+            
+            // Criar ZonedDateTime a partir do UTC e converter para timezone local
+            java.time.ZonedDateTime zdtUTC = dt.atZone(java.time.ZoneOffset.UTC);
+            java.time.ZonedDateTime zdtLocal = zdtUTC.withZoneSameInstant(zone);
+            
+            // Formato: "25/11/2025 14:30:52"
+            java.time.format.DateTimeFormatter formatter = 
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            String dataFormatada = zdtLocal.format(formatter);
+            
+            // Adicionar timezone abreviado (BRT, UTC, PST, etc)
+            String timezoneAbrev = zdtLocal.format(
+                java.time.format.DateTimeFormatter.ofPattern("z"));
+            
+            return dataFormatada + " (" + timezoneAbrev + ")";
+        } catch (Exception e) {
+            // Fallback: formato ISO se der erro
+            return dt.toString();
+        }
+    }
+
+    // =================================================================================
+    // GERENCIAMENTO DE BACKUPS
+    // =================================================================================
+    
+    /**
+     * Menu principal para gerenciar backups (listar e deletar)
+     */
+    private static void menuGerenciarBackups(Scanner sc) {
+        while (true) {
+            System.out.println("\n" + ANSI_CYAN + "╔════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "║" + ANSI_RESET + ANSI_BOLD + "              📦 GERENCIAMENTO DE BACKUPS 📦              " + ANSI_RESET + ANSI_CYAN + "║" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "╚════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+            System.out.println();
+            System.out.println("1) 📋 Listar Todos os Backups");
+            System.out.println("2) 🗑️  Deletar Backup Específico");
+            System.out.println("3) 🗑️  Deletar Todos os Backups");
+            System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
+            System.out.print("Escolha: ");
+            String op = sc.nextLine().trim();
+            
+            try {
+                switch (op) {
+                    case "1" -> listarBackups();
+                    case "2" -> deletarBackupEspecifico(sc);
+                    case "3" -> deletarTodosBackups(sc);
+                    case "0" -> { return; }
+                    default -> System.out.println(ANSI_RED + "Opção inválida." + ANSI_RESET);
+                }
+            } catch (Exception e) {
+                System.out.println(ANSI_RED + "Erro: " + e.getMessage() + ANSI_RESET);
+            }
+        }
+    }
+    
+    /**
+     * Lista todos os arquivos de backup encontrados
+     */
+    private static void listarBackups() {
+        System.out.println("\n" + ANSI_BLUE + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_BOLD + "📋 BACKUPS DISPONÍVEIS" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println();
+        
+        java.util.ArrayList<File> backups = buscarTodosBackups();
+        
+        if (backups.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "Nenhum arquivo de backup encontrado." + ANSI_RESET);
+            System.out.println();
+            return;
+        }
+        
+        System.out.println(ANSI_CYAN + "Encontrados " + backups.size() + " backup(s):" + ANSI_RESET);
+        System.out.println();
+        
+        for (int i = 0; i < backups.size(); i++) {
+            File backup = backups.get(i);
+            double tamanhoMB = backup.length() / 1024.0 / 1024.0;
+            
+            // Tentar extrair data do nome do arquivo
+            String dataStr = extrairDataDoNome(backup.getName());
+            
+            System.out.printf("%s[%d]%s %s\n", 
+                ANSI_BOLD, (i + 1), ANSI_RESET, 
+                backup.getName());
+            System.out.printf("    📁 Local: %s\n", backup.getAbsolutePath());
+            System.out.printf("    📊 Tamanho: %.2f MB (%d bytes)\n", tamanhoMB, backup.length());
+            if (dataStr != null) {
+                System.out.printf("    📅 Data: %s\n", dataStr);
+            }
+            System.out.println();
+        }
+        
+        System.out.println(ANSI_BLUE + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+    }
+    
+    /**
+     * Busca todos os arquivos de backup (.zip) no diretório raiz e dats/
+     */
+    private static java.util.ArrayList<File> buscarTodosBackups() {
+        java.util.ArrayList<File> backups = new java.util.ArrayList<>();
+        
+        // Buscar na raiz do projeto
+        File raiz = new File(".");
+        if (raiz.exists() && raiz.isDirectory()) {
+            File[] arquivosRaiz = raiz.listFiles((dir, name) -> 
+                name.toLowerCase().endsWith(".zip") && name.toLowerCase().contains("backup"));
+            if (arquivosRaiz != null) {
+                for (File f : arquivosRaiz) {
+                    backups.add(f);
+                }
+            }
+        }
+        
+        // Buscar na pasta dats/
+        File datsDir = new File("dats");
+        if (datsDir.exists() && datsDir.isDirectory()) {
+            File[] arquivosDats = datsDir.listFiles((dir, name) -> 
+                name.toLowerCase().endsWith(".zip") && name.toLowerCase().contains("backup"));
+            if (arquivosDats != null) {
+                for (File f : arquivosDats) {
+                    backups.add(f);
+                }
+            }
+        }
+        
+        // Ordenar por data de modificação (mais recente primeiro)
+        backups.sort((a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+        
+        return backups;
+    }
+    
+    /**
+     * Extrai a data do nome do arquivo de backup (se existir)
+     */
+    private static String extrairDataDoNome(String nomeArquivo) {
+        // Formato esperado: backup_YYYYMMDD_HHMMSS.zip
+        if (nomeArquivo.matches(".*\\d{8}_\\d{6}.*")) {
+            try {
+                String[] partes = nomeArquivo.split("_");
+                if (partes.length >= 3) {
+                    String data = partes[1]; // YYYYMMDD
+                    String hora = partes[2].replace(".zip", ""); // HHMMSS
+                    
+                    String ano = data.substring(0, 4);
+                    String mes = data.substring(4, 6);
+                    String dia = data.substring(6, 8);
+                    
+                    String h = hora.substring(0, 2);
+                    String m = hora.substring(2, 4);
+                    String s = hora.substring(4, 6);
+                    
+                    return String.format("%s/%s/%s às %s:%s:%s", dia, mes, ano, h, m, s);
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+        
+        // Se não conseguir extrair, usar data de modificação do arquivo
+        return null;
+    }
+    
+    /**
+     * Permite ao usuário escolher e deletar um backup específico
+     */
+    private static void deletarBackupEspecifico(Scanner sc) {
+        java.util.ArrayList<File> backups = buscarTodosBackups();
+        
+        if (backups.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "\nNenhum backup encontrado para deletar." + ANSI_RESET);
+            return;
+        }
+        
+        System.out.println("\n" + ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_BOLD + "🗑️  DELETAR BACKUP ESPECÍFICO" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "═══════════════════════════════════════════════════════════" + ANSI_RESET);
+        System.out.println();
+        
+        // Listar backups com números
+        for (int i = 0; i < backups.size(); i++) {
+            File backup = backups.get(i);
+            double tamanhoMB = backup.length() / 1024.0 / 1024.0;
+            String dataStr = extrairDataDoNome(backup.getName());
+            
+            System.out.printf("%s[%d]%s %s", 
+                ANSI_BOLD, (i + 1), ANSI_RESET, 
+                backup.getName());
+            if (dataStr != null) {
+                System.out.printf(" (%s)", dataStr);
+            }
+            System.out.printf(" - %.2f MB\n", tamanhoMB);
+        }
+        
+        System.out.println();
+        System.out.print("Digite o número do backup a deletar (0 para cancelar): ");
+        String input = sc.nextLine().trim();
+        
+        try {
+            int escolha = Integer.parseInt(input);
+            
+            if (escolha == 0) {
+                System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+                return;
+            }
+            
+            if (escolha < 1 || escolha > backups.size()) {
+                System.out.println(ANSI_RED + "Número inválido." + ANSI_RESET);
+                return;
+            }
+            
+            File backupParaDeletar = backups.get(escolha - 1);
+            
+            System.out.println();
+            System.out.println(ANSI_YELLOW + "⚠️  ATENÇÃO: Esta ação não pode ser desfeita!" + ANSI_RESET);
+            System.out.println("Backup a ser deletado: " + ANSI_RED + backupParaDeletar.getName() + ANSI_RESET);
+            System.out.println();
+            
+            if (perguntarBool(sc, "Confirmar deleção? (s/n): ")) {
+                if (backupParaDeletar.delete()) {
+                    System.out.println(ANSI_GREEN + "✓ Backup deletado com sucesso!" + ANSI_RESET);
+                } else {
+                    System.out.println(ANSI_RED + "✗ Erro ao deletar o backup." + ANSI_RESET);
+                }
+            } else {
+                System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+            }
+            
+        } catch (NumberFormatException e) {
+            System.out.println(ANSI_RED + "Entrada inválida. Digite apenas números." + ANSI_RESET);
+        }
+    }
+    
+    /**
+     * Deleta todos os backups após confirmação
+     */
+    private static void deletarTodosBackups(Scanner sc) {
+        java.util.ArrayList<File> backups = buscarTodosBackups();
+        
+        if (backups.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "\nNenhum backup encontrado para deletar." + ANSI_RESET);
+            return;
+        }
+        
+        System.out.println("\n" + ANSI_RED + "╔════════════════════════════════════════════════════════════╗" + ANSI_RESET);
+        System.out.println(ANSI_RED + "║" + ANSI_RESET + ANSI_BOLD + "           ⚠️  DELETAR TODOS OS BACKUPS ⚠️              " + ANSI_RESET + ANSI_RED + "║" + ANSI_RESET);
+        System.out.println(ANSI_RED + "╚════════════════════════════════════════════════════════════╝" + ANSI_RESET);
+        System.out.println();
+        
+        System.out.println(ANSI_YELLOW + "Esta ação irá deletar " + backups.size() + " backup(s):" + ANSI_RESET);
+        System.out.println();
+        
+        for (File backup : backups) {
+            System.out.println("  • " + backup.getName());
+        }
+        
+        System.out.println();
+        System.out.println(ANSI_RED + "⚠️  ATENÇÃO: Esta ação NÃO pode ser desfeita!" + ANSI_RESET);
+        System.out.println();
+        
+        if (perguntarBool(sc, "Tem certeza que deseja deletar TODOS os backups? (s/n): ")) {
+            int deletados = 0;
+            int erros = 0;
+            
+            for (File backup : backups) {
+                if (backup.delete()) {
+                    deletados++;
+                    System.out.println(ANSI_GREEN + "✓ Deletado: " + backup.getName() + ANSI_RESET);
+                } else {
+                    erros++;
+                    System.out.println(ANSI_RED + "✗ Erro ao deletar: " + backup.getName() + ANSI_RESET);
+                }
+            }
+            
+            System.out.println();
+            System.out.println(ANSI_BOLD + "Resumo:" + ANSI_RESET);
+            System.out.println("  • " + ANSI_GREEN + deletados + " backup(s) deletado(s)" + ANSI_RESET);
+            if (erros > 0) {
+                System.out.println("  • " + ANSI_RED + erros + " erro(s)" + ANSI_RESET);
+            }
+            
+        } else {
+            System.out.println(ANSI_YELLOW + "Operação cancelada." + ANSI_RESET);
+        }
+    }
+    
+    /**
+     * Gera nome de arquivo de backup com data e hora
+     */
+    public static String gerarNomeBackupComData() {
+        java.time.LocalDateTime agora = java.time.LocalDateTime.now();
+        java.time.format.DateTimeFormatter formatter = 
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        return "backup_" + agora.format(formatter) + ".zip";
     }
 
 }

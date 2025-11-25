@@ -36,7 +36,8 @@ java -cp "Codigo/target/classes" br.com.mpet.TesteCompleto
 
 ### Observações
 - O `Makefile` usa PowerShell (Windows). No Linux, use o Maven direto como acima.
-- Os arquivos `.dat`/`.idx` e `backup.zip` ficam em `dats/`.
+- Os arquivos `.dat`/`.idx` ficam em `dats/`.
+- Backups são salvos com timestamp: `backup_YYYYMMDD_HHMMSS.zip`
 - Na primeira execução, chaves RSA serão geradas automaticamente em `keys/`.
 
 ---
@@ -65,7 +66,7 @@ trabalho-pratico-aed3-2025-2/
 ├── keys/                                # Chaves RSA (⚠️ CONFIDENCIAL)
 │   ├── public_key.pem
 │   └── private_key.pem
-└── backup.zip                           # Backup comprimido
+└── backup_*.zip                         # Backups com timestamp (ex: backup_20251125_143052.zip)
 ```
 
 ### Formato de Arquivos `.dat`
@@ -189,6 +190,20 @@ byte[] Huffman.decodifica(byte[] dadosComprimidos)
 # Opções:
 1) LZW (mais rápido, melhor para dados repetitivos)
 2) Huffman (bom para dados variados)
+```
+
+**Formato de arquivo de backup:**
+- Backups são salvos com **timestamp** no nome: `backup_YYYYMMDD_HHMMSS.zip`
+- Exemplo: `backup_20251125_143052.zip` (25/11/2025 às 14:30:52)
+- Permite múltiplas versões de backup sem sobrescrever arquivos anteriores
+
+**Gerenciamento de Backups:**
+```bash
+# Menu: Admin → Sistema → Gerenciar Backups
+# Opções disponíveis:
+1) 📋 Listar Todos os Backups    # Mostra backups com nome, tamanho e data
+2) 🗑️  Deletar Backup Específico  # Escolhe backup por número
+3) 🗑️  Deletar Todos os Backups   # Remove todos com confirmação
 ```
 
 **Auto-detecção no Restore:**

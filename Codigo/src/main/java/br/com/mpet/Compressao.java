@@ -4,28 +4,46 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class Compressao {
 
     private static final String PASTA_DADOS = "dats";
-    private static final String ARQUIVO_BACKUP = "backup.zip"; // Salvo na RAIZ do projeto (fora de /dats/)
 
-    public static void comprimir(int versao) throws IOException {
+    /**
+     * Gera o nome do arquivo de backup com timestamp
+     * Formato: backup_YYYYMMDD_HHMMSS.zip
+     */
+    private static String gerarNomeBackup() {
+        LocalDateTime agora = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        return "backup_" + agora.format(formatter) + ".zip";
+    }
+
+    /**
+     * Comprime todos os arquivos da pasta dats/ em um arquivo ZIP com timestamp
+     * @param versao 1 para Huffman, qualquer outro valor para LZW
+     * @return nome do arquivo de backup criado
+     */
+    public static String comprimir(int versao) throws IOException {
+        String arquivoBackup = gerarNomeBackup();
+        
         File pastaDados = new File(PASTA_DADOS);
         if (!pastaDados.exists() || !pastaDados.isDirectory()) {
             System.out.println("Pasta de dados '" + PASTA_DADOS + "' não encontrada.");
-            return;
+            return null;
         }
 
         File[] arquivos = pastaDados.listFiles();
         if (arquivos == null || arquivos.length == 0) {
             System.out.println("Nenhum arquivo de dados para comprimir.");
-            return;
+            return null;
         }
 
-        try (FileOutputStream fos = new FileOutputStream(ARQUIVO_BACKUP);
+        try (FileOutputStream fos = new FileOutputStream(arquivoBackup);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
 
             for (File arquivo : arquivos) {
@@ -63,7 +81,8 @@ public class Compressao {
                     }
                 }
             }
-            System.out.println("\nBackup concluído com sucesso! Arquivo gerado: " + ARQUIVO_BACKUP);
+            System.out.println("\nBackup concluído com sucesso! Arquivo gerado: " + arquivoBackup);
+            return arquivoBackup;
 
         } catch (IOException e) {
             System.err.println("Ocorreu um erro durante a compressão: " + e.getMessage());

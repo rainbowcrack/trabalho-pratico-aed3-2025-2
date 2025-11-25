@@ -372,55 +372,68 @@ public class TesteCompleto {
         secao("TESTES BACKUP/RESTORE (Ciclo Completo)");
         
         File dataDir = new File("dats");
-        File backupLZW = new File(dataDir, "backup_teste_lzw.zip");
-        File backupHuffman = new File(dataDir, "backup_teste_huffman.zip");
         
-        // Limpar backups anteriores
-        if (backupLZW.exists()) backupLZW.delete();
-        if (backupHuffman.exists()) backupHuffman.delete();
+        // Criar alguns dados de teste para fazer backup
+        System.out.println(ANSI_YELLOW + "  ⚙️  Criando dados de teste para backup..." + ANSI_RESET);
+        File ongFile = new File(dataDir, "ongs_backup_test.dat");
+        try (OngDataFileDao ongDao = new OngDataFileDao(ongFile, (byte)1)) {
+            Ong ong1 = new Ong();
+            ong1.setNome("ONG Teste Backup 1");
+            ong1.setCnpj("11.111.111/0001-11");
+            ong1.setCpfResponsavel("111.111.111-11");
+            ong1.setTelefone("11999999991");
+            ong1.setEndereco("Rua Teste 1");
+            ong1.setAtivo(true);
+            ongDao.create(ong1);
+            
+            Ong ong2 = new Ong();
+            ong2.setNome("ONG Teste Backup 2");
+            ong2.setCnpj("22.222.222/0001-22");
+            ong2.setCpfResponsavel("222.222.222-22");
+            ong2.setTelefone("11999999992");
+            ong2.setEndereco("Rua Teste 2");
+            ong2.setAtivo(true);
+            ongDao.create(ong2);
+        }
+        System.out.println(ANSI_GREEN + "  ✓ Dados de teste criados!" + ANSI_RESET);
         
         // Teste 1: Backup com LZW
         teste("Backup - Criar com LZW", () -> {
-            Compressao.comprimir(2); // 2 = LZW
-            // Copiar para arquivo específico
-            File backup = new File("backup.zip");
-            if (!backup.exists()) {
-                return false;
-            }
-            java.nio.file.Files.copy(
-                backup.toPath(), 
-                backupLZW.toPath(), 
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
-            );
-            backup.delete(); // Limpar original
-            return backupLZW.exists() && backupLZW.length() > 0;
+            String nomeBackup = Compressao.comprimir(2); // 2 = LZW
+            if (nomeBackup == null) return false;
+            
+            File backup = new File(nomeBackup);
+            boolean sucesso = backup.exists() && backup.length() > 0;
+            
+            // Limpar backup de teste
+            if (backup.exists()) backup.delete();
+            
+            return sucesso;
         });
         
         // Teste 2: Backup com Huffman
         teste("Backup - Criar com Huffman", () -> {
-            Compressao.comprimir(1); // 1 = Huffman
-            // Copiar para arquivo específico
-            File backup = new File("backup.zip");
-            if (!backup.exists()) {
-                return false;
-            }
-            java.nio.file.Files.copy(
-                backup.toPath(), 
-                backupHuffman.toPath(), 
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
-            );
-            backup.delete(); // Limpar original
-            return backupHuffman.exists() && backupHuffman.length() > 0;
+            String nomeBackup = Compressao.comprimir(1); // 1 = Huffman
+            if (nomeBackup == null) return false;
+            
+            File backup = new File(nomeBackup);
+            boolean sucesso = backup.exists() && backup.length() > 0;
+            
+            // Limpar backup de teste
+            if (backup.exists()) backup.delete();
+            
+            return sucesso;
         });
+        
+        // Limpar dados de teste
+        if (ongFile.exists()) ongFile.delete();
+        File ongIdxFile = new File(dataDir, "ongs_backup_test.dat.idx");
+        if (ongIdxFile.exists()) ongIdxFile.delete();
         
         // Teste 3 & 4: Restore é feito manualmente via Interface
         info("\n  💡 Para testar Restore, use:");
         info("     java -cp \"Codigo/target/classes\" br.com.mpet.Interface");
         info("     Login: admin/admin → Sistema → Restaurar Backup\n");
-        
-        // Limpeza
-        if (backupLZW.exists()) backupLZW.delete();
-        if (backupHuffman.exists()) backupHuffman.delete();
     }
     
     // ========================================================================

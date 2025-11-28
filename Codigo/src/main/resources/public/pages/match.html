@@ -14,9 +14,7 @@
                 <img src="../assets/img/logo1.png" alt="Logo PetMatch" style="height: 80px; width: auto;">
             </div>
             <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
-                <li><a href="index.html">início</a></li>
-                <li><a href="match.html">matches</a></li>
-                <li><a href="sobre.html">sobre</a></li>
+                <!-- Navegação dinâmica preenchida por navigation.js -->
             </ul>
         </nav>
     </header>
@@ -35,8 +33,24 @@
     <script src="../assets/js/models.js"></script>
     <script src="../assets/js/auth/sessionManager.js"></script>
     <script src="../assets/js/auth/router.js"></script>
+    <script src="../assets/js/utils/navigation.js"></script>
     <script src="../assets/js/utils/petAdapter.js"></script>
     <script src="../assets/js/services/petService.js"></script>
-    <script src="../assets/js/index.js"></script>
+    <script>
+        // Protege página antes de carregar conteúdo
+        if (!SessionManager.isAuthenticated()) {
+            SessionManager.setSavedUrl('match.html');
+            window.location.href = 'login.html';
+        } else {
+            // Renderiza navbar e carrega index.js
+            const pageName = 'match';
+            renderNavbar(pageName);
+            
+            // Agora carrega o script de match
+            const script = document.createElement('script');
+            script.src = '../assets/js/index.js';
+            document.body.appendChild(script);
+        }
+    </script>
 </body>
 </html>

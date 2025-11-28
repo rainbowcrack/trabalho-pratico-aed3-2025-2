@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Matches - PetMatch</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .matches-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .matches-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .matches-header h1 {
+            font-size: 2.5rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 0.5rem;
+        }
+
+        .matches-header p {
+            color: var(--muted);
+            font-size: 1.1rem;
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .match-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .match-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(255, 111, 97, 0.25);
+            border-color: var(--primary-solid);
+        }
+
+        .match-card-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: #222;
+        }
+
+        .match-card-body {
+            padding: 1.5rem;
+        }
+
+        .match-card-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 0.5rem;
+        }
+
+        .match-card-details {
+            color: var(--primary-solid);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .match-card-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .match-card-description {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .match-card-footer {
+            display: flex;
+            gap: 0.8rem;
+            border-top: 1px solid #282834;
+            padding-top: 1rem;
+        }
+
+        .match-card-btn {
+            flex: 1;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            text-align: center;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .match-card-btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .match-card-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 111, 97, 0.3);
+        }
+
+        .match-card-btn-secondary {
+            background: #282834;
+            color: var(--accent);
+            border: 1px solid #282834;
+        }
+
+        .match-card-btn-secondary:hover {
+            background: transparent;
+            border-color: var(--accent);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+
+        .empty-state-btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .empty-state-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 111, 97, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .matches-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .matches-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .match-card-image {
+                height: 200px;
+            }
+        }
+
+        .match-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: var(--success);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .match-status.pending {
+            background: #ff9800;
+        }
+
+        .match-status.adopted {
+            background: #4caf50;
+        }
+
+        .badge-favorite {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 59, 59, 0.9);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .match-card-image-wrapper {
+            position: relative;
+        }
+    </style>
+</head>
+<body data-theme="dog">
+    <header>
+        <nav style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="../assets/img/logo1.png" alt="Logo PetMatch" style="height: 80px; width: auto;">
+            </div>
+            <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
+                <!-- Preenchida dinamicamente -->
+            </ul>
+        </nav>
+    </header>
+
+    <main class="matches-container">
+        <div class="matches-header">
+            <h1>❤️ Meus Favoritos</h1>
+            <p>Animais que você curtiu e salvou</p>
+        </div>
+
+        <div id="matchesContent">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h2>Você ainda não tem favoritos</h2>
+                <p>Explore nossos animais disponíveis e salve os que mais gostou!</p>
+                <a href="match.html" class="empty-state-btn">Explorar Animais</a>
+            </div>
+        </div>
+    </main>
+
+    <footer style="background: var(--primary); color: #fff; text-align: center; padding: 1rem; border-top-left-radius: var(--border-radius); border-top-right-radius: var(--border-radius); margin-top: 2rem;">
+        © 2025 - PetMatch. Feito com ❤️ para adoção responsável.
+    </footer>
+
+    <!-- Scripts: Ordem CRÍTICA -->
+    <script src="../assets/js/models.js"></script>
+    <script src="../assets/js/auth/sessionManager.js"></script>
+    <script src="../assets/js/auth/router.js"></script>
+    <script src="../assets/js/utils/navigation.js"></script>
+    <script src="../assets/js/utils/petAdapter.js"></script>
+    <script src="../assets/js/services/petService.js"></script>
+    <script>
+        /**
+         * Protege página: só acessível se autenticado como ADOTANTE
+         */
+        function initPage() {
+            if (!protectRoute('ADOTANTE')) return;
+
+            const user = SessionManager.getCurrentUser();
+            renderNavbar('meus-matches');
+            loadMyMatches(user.cpf);
+        }
+
+        /**
+         * Carrega matches (favoritos) do usuário
+         */
+        async function loadMyMatches(userCpf) {
+            const content = document.getElementById('matchesContent');
+
+            try {
+                // FUTURO: Buscar via API /api/adotantes/{cpf}/favoritos
+                // MOCK: Simula dados do usuário logado
+                const mockMatches = [
+                    {
+                        id: 1,
+                        nome: 'Luna',
+                        icone: '🐕',
+                        imagem: 'https://images.unsplash.com/photo-1633722715463-d30628cfe590?w=400&h=300&fit=crop',
+                        detalhes: '2 anos • Médio',
+                        descricao: 'Cadela dócil e carinhosa, adora brincar. Perfeita para famílias com crianças.',
+                        ong: 'Patinhas Felizes',
+                        status: 'PENDENTE'
+                    },
+                    {
+                        id: 2,
+                        nome: 'Miau',
+                        icone: '🐱',
+                        imagem: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop',
+                        detalhes: '1 ano • Pequeno',
+                        descricao: 'Gato tímido mas muito afetuoso. Gosta de sun bathing.',
+                        ong: 'Resgate Animal RJ',
+                        status: 'APROVADO'
+                    },
+                    {
+                        id: 3,
+                        nome: 'Max',
+                        icone: '🐕',
+                        imagem: 'https://images.unsplash.com/photo-1552053831-71594a27c62d?w=400&h=300&fit=crop',
+                        detalhes: '3 anos • Grande',
+                        descricao: 'Pastor Alemão bem treinado, protetor e leal.',
+                        ong: 'Patas e Amor',
+                        status: 'PENDENTE'
+                    }
+                ];
+
+                if (mockMatches.length === 0) {
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h2>Você ainda não tem favoritos</h2>
+                            <p>Explore nossos animais disponíveis e salve os que mais gostou!</p>
+                            <a href="match.html" class="empty-state-btn">Explorar Animais</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const grid = document.createElement('div');
+                grid.className = 'matches-grid';
+
+                mockMatches.forEach(match => {
+                    const card = createMatchCard(match);
+                    grid.appendChild(card);
+                });
+
+                content.innerHTML = '';
+                content.appendChild(grid);
+
+            } catch (error) {
+                console.error('Erro ao carregar matches:', error);
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">😞</div>
+                        <h2>Erro ao carregar</h2>
+                        <p>Não conseguimos carregar seus favoritos. Tente novamente.</p>
+                        <a href="match.html" class="empty-state-btn">Voltar para Matches</a>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Cria card de match
+         */
+        function createMatchCard(match) {
+            const card = document.createElement('div');
+            card.className = 'match-card';
+
+            const statusColor = match.status === 'APROVADO' ? 'adopted' : 'pending';
+            const statusText = match.status === 'APROVADO' ? '✅ Aprovado' : '⏳ Pendente';
+
+            card.innerHTML = `
+                <div class="match-card-image-wrapper">
+                    <img class="match-card-image" src="${match.imagem}" alt="${match.nome}">
+                    <div class="badge-favorite">❤️</div>
+                </div>
+                <div class="match-card-body">
+                    <h3 class="match-card-name">${match.icone} ${match.nome}</h3>
+                    <div class="match-card-details">
+                        <div class="match-card-detail-item">
+                            <span>${match.detalhes}</span>
+                        </div>
+                    </div>
+                    <p class="match-card-description">${match.descricao}</p>
+                    <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">
+                        ${match.ong}
+                    </div>
+                    <div class="match-status ${statusColor}">${statusText}</div>
+                    <div class="match-card-footer">
+                        <button class="match-card-btn match-card-btn-primary" onclick="goToChat('${match.id}')">
+                            💬 Conversar
+                        </button>
+                        <button class="match-card-btn match-card-btn-secondary" onclick="viewProfile('${match.id}')">
+                            👁️ Ver Perfil
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        /**
+         * Vai para chat do animal
+         */
+        function goToChat(animalId) {
+            window.location.href = `meus-chats.html?animal=${animalId}`;
+        }
+
+        /**
+         * View profile do animal
+         */
+        function viewProfile(animalId) {
+            window.location.href = `match.html#animal-${animalId}`;
+        }
+
+        // Inicializa página
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

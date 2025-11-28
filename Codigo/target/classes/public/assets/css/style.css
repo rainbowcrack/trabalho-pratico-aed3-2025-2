@@ -1027,3 +1027,92 @@ body[data-theme="dog"] {
   color: #60a5fa;
   border-left: 4px solid #3b82f6;
 }
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 500;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.3);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #e53935, #d32f2f);
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.3);
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.3);
+}
+
+@media (max-width: 600px) {
+  .toast {
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+  }
+}
+
+/* Flying Hearts */
+.flying-heart {
+  position: fixed;
+  pointer-events: none;
+  font-size: 2rem;
+  animation: heartFloat 0.8s ease-out forwards;
+  z-index: 9998;
+}
+
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8);
+  }
+}
+
+/* Melhorias responsivas para telas pequenas */
+@media (max-width: 768px) {
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .btn-login {
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+}

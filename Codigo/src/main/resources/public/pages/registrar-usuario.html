@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Usuário - MPet</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #282834;
+        }
+
+        .tab-btn {
+            padding: 0.8rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            border-bottom-color: var(--primary-solid);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #282834;
+            border-radius: 8px;
+            background: #181820;
+            color: #fff;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group select option {
+            background: #181820;
+            color: #fff;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-solid);
+            box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+        }
+
+        .form-group input.error,
+        .form-group select.error,
+        .form-group textarea.error {
+            border-color: var(--danger);
+            background-color: rgba(229, 57, 53, 0.05);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .hidden-field {
+            display: none;
+        }
+
+        .hidden-field.show {
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 111, 97, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-error {
+            background-color: rgba(229, 57, 53, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--muted);
+        }
+
+        .form-footer a {
+            color: var(--primary-solid);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .form-footer a:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body data-theme="dog">
+    <header>
+        <nav style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="../assets/img/logo1.png" alt="Logo PetMatch" style="height: 80px; width: auto;">
+            </div>
+            <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
+                <li><a href="index.html">início</a></li>
+                <li><a href="sobre.html">sobre nós</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="form-container">
+        <div class="form-header">
+            <h1>Criar Conta 👤</h1>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <!-- Abas -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="adotante">Sou Adotante</button>
+            <button class="tab-btn" data-tab="voluntario">Sou Voluntário</button>
+        </div>
+
+        <!-- TAB: ADOTANTE -->
+        <form id="registerAdotanteForm" class="tab-content active">
+            <h2 style="color: var(--primary-solid); margin-top: 0;">Dados Pessoais</h2>
+
+            <div class="form-group">
+                <label for="cpfAdotante">CPF</label>
+                <input 
+                    type="text" 
+                    id="cpfAdotante" 
+                    name="cpf"
+                    placeholder="XXX.XXX.XXX-XX"
+                    maxlength="14"
+                    required
+                >
+                <div class="hint">Use apenas números</div>
+                <div id="cpfAdotanteError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="senhaAdotante">Senha</label>
+                <input 
+                    type="password" 
+                    id="senhaAdotante" 
+                    name="senha"
+                    placeholder="••••••••"
+                    required
+                >
+                <div class="hint">Mínimo 6 caracteres</div>
+                <div id="senhaAdotanteError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="nomeCompletoAdotante">Nome Completo</label>
+                <input 
+                    type="text" 
+                    id="nomeCompletoAdotante" 
+                    name="nomeCompleto"
+                    placeholder="Seu nome completo"
+                    required
+                >
+                <div id="nomeCompletoAdotanteError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="dataNascimentoAdotante">Data de Nascimento</label>
+                <input 
+                    type="date" 
+                    id="dataNascimentoAdotante" 
+                    name="dataNascimento"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="telefoneAdotante">Telefone</label>
+                <input 
+                    type="tel" 
+                    id="telefoneAdotante" 
+                    name="telefone"
+                    placeholder="(11) 98765-4321"
+                >
+            </div>
+
+            <h2 style="color: var(--primary-solid); margin-top: 2rem;">Preferências de Moradia</h2>
+
+            <div class="form-group">
+                <label for="tipoMoradia">Tipo de Moradia</label>
+                <select id="tipoMoradia" name="tipoMoradia">
+                    <option value="">Selecione...</option>
+                    <option value="CASA_COM_QUINTAL_MURADO">Casa com quintal murado</option>
+                    <option value="CASA_SEM_QUINTAL">Casa sem quintal</option>
+                    <option value="APARTAMENTO">Apartamento</option>
+                </select>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="telaProtetora" name="telaProtetora">
+                <label for="telaProtetora">Possui tela protetora nas janelas</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="outrosAnimais" name="outrosAnimais">
+                <label for="outrosAnimais">Possui outros animais</label>
+            </div>
+
+            <div id="descOutrosAnimaisField" class="hidden-field">
+                <div class="form-group">
+                    <label for="descOutrosAnimais">Descreva os outros animais</label>
+                    <textarea 
+                        id="descOutrosAnimais" 
+                        name="descOutrosAnimais"
+                        placeholder="Ex: 1 gato siamês, 2 pássaros"
+                        rows="3"
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="horasForaCasa">Quantas horas por dia fica fora de casa?</label>
+                <input 
+                    type="number" 
+                    id="horasForaCasa" 
+                    name="horasForaCasa"
+                    min="0"
+                    max="24"
+                    value="8"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="composicaoFamiliar">Composição da Família</label>
+                <select id="composicaoFamiliar" name="composicaoFamiliar">
+                    <option value="">Selecione...</option>
+                    <option value="PESSOA_SOZINHA">Pessoa sozinha</option>
+                    <option value="CASAL_SEM_FILHOS">Casal sem filhos</option>
+                    <option value="FAMILIA_COM_CRIANCAS">Família com crianças</option>
+                </select>
+            </div>
+
+            <h2 style="color: var(--primary-solid); margin-top: 2rem;">Experiência e Motivação</h2>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="jaTevePets" name="jaTevePets">
+                <label for="jaTevePets">Já tive pets anteriormente</label>
+            </div>
+
+            <div id="experienciaField" class="hidden-field">
+                <div class="form-group">
+                    <label for="experienciaPets">Conte sobre sua experiência com pets</label>
+                    <textarea 
+                        id="experienciaPets" 
+                        name="experienciaPets"
+                        placeholder="Tipo de pets, tempo, experiências relevantes..."
+                        rows="3"
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="motivoAdocao">Motivo da Adoção</label>
+                <textarea 
+                    id="motivoAdocao" 
+                    name="motivoAdocao"
+                    placeholder="Por que deseja adotar?"
+                    rows="3"
+                    required
+                ></textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="viagensFrequentes" name="viagensFrequentes">
+                <label for="viagensFrequentes">Faz viagens frequentes</label>
+            </div>
+
+            <div id="descViagensField" class="hidden-field">
+                <div class="form-group">
+                    <label for="descViagens">Descreva suas viagens</label>
+                    <textarea 
+                        id="descViagens" 
+                        name="descViagens"
+                        placeholder="Frequência e duração das viagens..."
+                        rows="3"
+                    ></textarea>
+                </div>
+            </div>
+
+            <h2 style="color: var(--primary-solid); margin-top: 2rem;">Consentimento</h2>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="cienteResponsavel" name="cienteResponsavel" required>
+                <label for="cienteResponsavel">Ciente de que precisa de responsável legal se menor</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="cienteCustos" name="cienteCustos" required>
+                <label for="cienteCustos">Ciente de todos os custos da adoção</label>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmitAdotante">
+                Criar Conta como Adotante
+            </button>
+        </form>
+
+        <!-- TAB: VOLUNTÁRIO -->
+        <form id="registerVoluntarioForm" class="tab-content">
+            <h2 style="color: var(--primary-solid); margin-top: 0;">Dados Pessoais</h2>
+
+            <div class="form-group">
+                <label for="cpfVoluntario">CPF</label>
+                <input 
+                    type="text" 
+                    id="cpfVoluntario" 
+                    name="cpf"
+                    placeholder="XXX.XXX.XXX-XX"
+                    maxlength="14"
+                    required
+                >
+                <div class="hint">Use apenas números</div>
+                <div id="cpfVoluntarioError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="senhaVoluntario">Senha</label>
+                <input 
+                    type="password" 
+                    id="senhaVoluntario" 
+                    name="senha"
+                    placeholder="••••••••"
+                    required
+                >
+                <div class="hint">Mínimo 6 caracteres</div>
+                <div id="senhaVoluntarioError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="nomeVoluntario">Nome</label>
+                <input 
+                    type="text" 
+                    id="nomeVoluntario" 
+                    name="nome"
+                    placeholder="Seu nome"
+                    required
+                >
+                <div id="nomeVoluntarioError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="telefoneVoluntario">Telefone</label>
+                <input 
+                    type="tel" 
+                    id="telefoneVoluntario" 
+                    name="telefone"
+                    placeholder="(11) 98765-4321"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="endereco">Endereço</label>
+                <input 
+                    type="text" 
+                    id="endereco" 
+                    name="endereco"
+                    placeholder="Seu endereço"
+                >
+            </div>
+
+            <h2 style="color: var(--primary-solid); margin-top: 2rem;">ONG</h2>
+
+            <div class="form-group">
+                <label for="ongSelect">Selecione a ONG</label>
+                <select id="ongSelect" name="idOng" required>
+                    <option value="">Carregando ONGs...</option>
+                </select>
+                <div class="hint">Escolha a organização em que deseja trabalhar como voluntário</div>
+                <div id="ongError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="cargo">Cargo/Função</label>
+                <select id="cargo" name="cargo" required>
+                    <option value="">Selecione...</option>
+                    <option value="TRIAGEM">Triagem e Avaliação</option>
+                    <option value="LOGISTICA">Logística</option>
+                    <option value="ATENDIMENTO">Atendimento</option>
+                    <option value="VETERINARIO">Veterinário</option>
+                    <option value="ADMIN">Administrador</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmitVoluntario">
+                Criar Conta como Voluntário
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <p>Já tem cadastro? <a href="login.html">Entre na sua conta</a></p>
+            <p style="margin-top: 15px;">
+                <a href="index.html">← Voltar para home</a>
+            </p>
+        </div>
+    </main>
+
+    <footer style="background: var(--primary); color: #fff; text-align: center; padding: 1rem; border-top-left-radius: var(--border-radius); border-top-right-radius: var(--border-radius); margin-top: 2rem;">
+        © 2025 - PetMatch. Feito com ❤️ para adoção responsável.
+    </footer>
+
+    <script src="../assets/js/models.js"></script>
+    <script src="../assets/js/auth/sessionManager.js"></script>
+    <script src="../assets/js/auth/router.js"></script>
+    <script src="../assets/js/utils/navigation.js"></script>
+    <script>
+        // Estado
+        const alertBox = document.getElementById('alertBox');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Tabs
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                document.getElementById(`register${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Form`).classList.add('active');
+            });
+        });
+
+        // Máscaras
+        ['cpfAdotante', 'cpfVoluntario'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    e.target.value = value;
+                }
+            });
+        });
+
+        ['telefoneAdotante', 'telefoneVoluntario'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    if (value.length >= 7) {
+                        value = value.replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+                    }
+                    if (value.length >= 2) {
+                        value = value.replace(/^(\d{2})/, '($1) ');
+                    }
+                    e.target.value = value;
+                }
+            });
+        });
+
+        // Mostrar/esconder campos condicionais
+        document.getElementById('outrosAnimais').addEventListener('change', function() {
+            document.getElementById('descOutrosAnimaisField').classList.toggle('show');
+        });
+
+        document.getElementById('jaTevePets').addEventListener('change', function() {
+            document.getElementById('experienciaField').classList.toggle('show');
+        });
+
+        document.getElementById('viagensFrequentes').addEventListener('change', function() {
+            document.getElementById('descViagensField').classList.toggle('show');
+        });
+
+        // Carregar ONGs
+        async function loadONGs() {
+            const select = document.getElementById('ongSelect');
+            try {
+                const ongs = await loadONGs();
+                select.innerHTML = '<option value="">Selecione...</option>';
+                ongs.forEach(ong => {
+                    const option = document.createElement('option');
+                    option.value = ong.id;
+                    option.textContent = ong.nome;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar ONGs:', error);
+                select.innerHTML = '<option value="">Erro ao carregar ONGs</option>';
+            }
+        }
+
+        function showAlert(message, type = 'error') {
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type} show`;
+            setTimeout(() => alertBox.classList.remove('show'), 5000);
+        }
+
+        function setLoadingAdotante(isLoading) {
+            const btn = document.getElementById('btnSubmitAdotante');
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span>Criando conta...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = 'Criar Conta como Adotante';
+            }
+        }
+
+        function setLoadingVoluntario(isLoading) {
+            const btn = document.getElementById('btnSubmitVoluntario');
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span>Criando conta...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = 'Criar Conta como Voluntário';
+            }
+        }
+
+        // Form Adotante
+        document.getElementById('registerAdotanteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('input, select, textarea').forEach(el => el.classList.remove('error'));
+            alertBox.classList.remove('show');
+
+            const cpf = document.getElementById('cpfAdotante').value.replace(/\D/g, '');
+            const senha = document.getElementById('senhaAdotante').value;
+            const nomeCompleto = document.getElementById('nomeCompletoAdotante').value.trim();
+
+            let hasError = false;
+
+            if (cpf.length !== 11) {
+                document.getElementById('cpfAdotanteError').textContent = 'CPF inválido';
+                document.getElementById('cpfAdotanteError').classList.add('show');
+                document.getElementById('cpfAdotante').classList.add('error');
+                hasError = true;
+            }
+
+            if (senha.length < 6) {
+                document.getElementById('senhaAdotanteError').textContent = 'Mínimo 6 caracteres';
+                document.getElementById('senhaAdotanteError').classList.add('show');
+                document.getElementById('senhaAdotante').classList.add('error');
+                hasError = true;
+            }
+
+            if (!nomeCompleto || nomeCompleto.length < 3) {
+                document.getElementById('nomeCompletoAdotanteError').textContent = 'Nome inválido';
+                document.getElementById('nomeCompletoAdotanteError').classList.add('show');
+                document.getElementById('nomeCompletoAdotante').classList.add('error');
+                hasError = true;
+            }
+
+            if (!document.getElementById('cienteResponsavel').checked) {
+                showAlert('Você precisa confirmar que está ciente da responsabilidade legal', 'error');
+                hasError = true;
+            }
+
+            if (!document.getElementById('cienteCustos').checked) {
+                showAlert('Você precisa confirmar que está ciente dos custos', 'error');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            setLoadingAdotante(true);
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                showAlert('Conta de adotante criada com sucesso! Redirecionando...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Erro:', error);
+                showAlert('Erro ao criar conta. Tente novamente.', 'error');
+                setLoadingAdotante(false);
+            }
+        });
+
+        // Form Voluntário
+        document.getElementById('registerVoluntarioForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('input, select, textarea').forEach(el => el.classList.remove('error'));
+            alertBox.classList.remove('show');
+
+            const cpf = document.getElementById('cpfVoluntario').value.replace(/\D/g, '');
+            const senha = document.getElementById('senhaVoluntario').value;
+            const nome = document.getElementById('nomeVoluntario').value.trim();
+            const idOng = document.getElementById('ongSelect').value;
+
+            let hasError = false;
+
+            if (cpf.length !== 11) {
+                document.getElementById('cpfVoluntarioError').textContent = 'CPF inválido';
+                document.getElementById('cpfVoluntarioError').classList.add('show');
+                document.getElementById('cpfVoluntario').classList.add('error');
+                hasError = true;
+            }
+
+            if (senha.length < 6) {
+                document.getElementById('senhaVoluntarioError').textContent = 'Mínimo 6 caracteres';
+                document.getElementById('senhaVoluntarioError').classList.add('show');
+                document.getElementById('senhaVoluntario').classList.add('error');
+                hasError = true;
+            }
+
+            if (!nome || nome.length < 3) {
+                document.getElementById('nomeVoluntarioError').textContent = 'Nome inválido';
+                document.getElementById('nomeVoluntarioError').classList.add('show');
+                document.getElementById('nomeVoluntario').classList.add('error');
+                hasError = true;
+            }
+
+            if (!idOng) {
+                document.getElementById('ongError').textContent = 'Selecione uma ONG';
+                document.getElementById('ongError').classList.add('show');
+                document.getElementById('ongSelect').classList.add('error');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            setLoadingVoluntario(true);
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                showAlert('Conta de voluntário criada com sucesso! Redirecionando...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Erro:', error);
+                showAlert('Erro ao criar conta. Tente novamente.', 'error');
+                setLoadingVoluntario(false);
+            }
+        });
+
+        // Carrega ONGs ao iniciar
+        document.addEventListener('DOMContentLoaded', loadONGs);
+    </script>
+</body>
+</html>

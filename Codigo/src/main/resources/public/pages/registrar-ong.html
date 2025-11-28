@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar ONG - MPet</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .form-container {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #282834;
+            border-radius: 8px;
+            background: #181820;
+            color: #fff;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-solid);
+            box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+        }
+
+        .form-group input.error,
+        .form-group textarea.error {
+            border-color: var(--danger);
+            background-color: rgba(229, 57, 53, 0.05);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .cpf-hint {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 111, 97, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-error {
+            background-color: rgba(229, 57, 53, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--muted);
+        }
+
+        .form-footer a {
+            color: var(--primary-solid);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .form-footer a:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body data-theme="dog">
+    <header>
+        <nav style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="../assets/img/logo1.png" alt="Logo PetMatch" style="height: 80px; width: auto;">
+            </div>
+            <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
+                <li><a href="index.html">início</a></li>
+                <li><a href="sobre.html">sobre nós</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="form-container">
+        <div class="form-header">
+            <h1>Registrar ONG 🏢</h1>
+            <p>Cadastre sua organização para gerenciar animais</p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="registerOngForm">
+            <div class="form-group">
+                <label for="nomeOng">Nome da ONG</label>
+                <input 
+                    type="text" 
+                    id="nomeOng" 
+                    name="nomeOng"
+                    placeholder="Ex: Patinhas Felizes"
+                    required
+                >
+                <div id="nomeOngError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="cnpj">CNPJ</label>
+                <input 
+                    type="text" 
+                    id="cnpj" 
+                    name="cnpj"
+                    placeholder="XX.XXX.XXX/XXXX-XX"
+                    required
+                >
+                <div class="cpf-hint">Digite o CNPJ da organização (14 dígitos)</div>
+                <div id="cnpjError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="endereco">Endereço</label>
+                <input 
+                    type="text" 
+                    id="endereco" 
+                    name="endereco"
+                    placeholder="Ex: Rua das Flores, 123 - São Paulo, SP"
+                    required
+                >
+                <div id="enderecoError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone</label>
+                <input 
+                    type="tel" 
+                    id="telefone" 
+                    name="telefone"
+                    placeholder="(11) 98765-4321"
+                    required
+                >
+                <div id="telefoneError" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="cpfResponsavel">CPF do Responsável</label>
+                <input 
+                    type="text" 
+                    id="cpfResponsavel" 
+                    name="cpfResponsavel"
+                    placeholder="XXX.XXX.XXX-XX"
+                    maxlength="14"
+                    required
+                >
+                <div class="cpf-hint">CPF do voluntário responsável pela ONG</div>
+                <div id="cpfResponsavelError" class="error-message"></div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmit">
+                Registrar ONG
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <p>Já tem cadastro? <a href="login.html">Entre na sua conta</a></p>
+            <p style="margin-top: 15px;">
+                <a href="index.html">← Voltar para home</a>
+            </p>
+        </div>
+    </main>
+
+    <footer style="background: var(--primary); color: #fff; text-align: center; padding: 1rem; border-top-left-radius: var(--border-radius); border-top-right-radius: var(--border-radius); margin-top: 2rem;">
+        © 2025 - PetMatch. Feito com ❤️ para adoção responsável.
+    </footer>
+
+    <script src="../assets/js/models.js"></script>
+    <script src="../assets/js/auth/sessionManager.js"></script>
+    <script src="../assets/js/auth/router.js"></script>
+    <script src="../assets/js/utils/navigation.js"></script>
+    <script>
+        const form = document.getElementById('registerOngForm');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const alertBox = document.getElementById('alertBox');
+
+        // Máscara de CNPJ
+        document.getElementById('cnpj').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 14) {
+                value = value.replace(/(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        // Máscara de CPF
+        document.getElementById('cpfResponsavel').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        // Máscara de telefone
+        document.getElementById('telefone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                if (value.length >= 7) {
+                    value = value.replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+                }
+                if (value.length >= 2) {
+                    value = value.replace(/^(\d{2})/, '($1) ');
+                }
+                e.target.value = value;
+            }
+        });
+
+        function showAlert(message, type = 'error') {
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type} show`;
+            setTimeout(() => alertBox.classList.remove('show'), 5000);
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<span class="loading-spinner"></span>Registrando...';
+            } else {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = 'Registrar ONG';
+            }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Limpa erros anteriores
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+            alertBox.classList.remove('show');
+
+            // Captura valores
+            const nomeOng = document.getElementById('nomeOng').value.trim();
+            const cnpj = document.getElementById('cnpj').value.replace(/\D/g, '');
+            const endereco = document.getElementById('endereco').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const cpfResponsavel = document.getElementById('cpfResponsavel').value.replace(/\D/g, '');
+
+            // Validações
+            let hasError = false;
+
+            if (!nomeOng || nomeOng.length < 3) {
+                document.getElementById('nomeOngError').textContent = 'Nome deve ter no mínimo 3 caracteres';
+                document.getElementById('nomeOngError').classList.add('show');
+                document.getElementById('nomeOng').classList.add('error');
+                hasError = true;
+            }
+
+            if (cnpj.length !== 14) {
+                document.getElementById('cnpjError').textContent = 'CNPJ deve ter 14 dígitos';
+                document.getElementById('cnpjError').classList.add('show');
+                document.getElementById('cnpj').classList.add('error');
+                hasError = true;
+            }
+
+            if (!endereco || endereco.length < 5) {
+                document.getElementById('enderecoError').textContent = 'Endereço inválido';
+                document.getElementById('enderecoError').classList.add('show');
+                document.getElementById('endereco').classList.add('error');
+                hasError = true;
+            }
+
+            if (!telefone || telefone.replace(/\D/g, '').length < 10) {
+                document.getElementById('telefoneError').textContent = 'Telefone inválido';
+                document.getElementById('telefoneError').classList.add('show');
+                document.getElementById('telefone').classList.add('error');
+                hasError = true;
+            }
+
+            if (cpfResponsavel.length !== 11) {
+                document.getElementById('cpfResponsavelError').textContent = 'CPF deve ter 11 dígitos';
+                document.getElementById('cpfResponsavelError').classList.add('show');
+                document.getElementById('cpfResponsavel').classList.add('error');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // Simula registro (FUTURO: enviar para API)
+            setLoading(true);
+
+            try {
+                // Simula delay de rede
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                showAlert('ONG registrada com sucesso! Redirecionando...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = 'registrar-usuario.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Erro ao registrar ONG:', error);
+                showAlert('Erro ao registrar ONG. Tente novamente.', 'error');
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

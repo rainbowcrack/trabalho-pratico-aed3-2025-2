@@ -1,0 +1,194 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║              🔧 TESTE DO LOGIN COM BACKEND REAL - RÁPIDO                  ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📋 3 PASSOS APENAS
+═══════════════════════════════════════════════════════════════════════════
+
+1️⃣  COMPILAR
+   $ cd trabalho-pratico-aed3-2025-2
+   $ make build
+
+2️⃣  INICIAR SERVIDOR (Terminal 1)
+   $ make run-with-server
+   
+   [Aguarde a mensagem:]
+   ✅ Servidor iniciado com sucesso!
+   🌐 Frontend:  http://localhost:8080/pages/index.html
+
+3️⃣  TESTAR LOGIN (Navegador)
+   Abra: http://localhost:8080/pages/login.html
+   
+   Admin:
+     CPF: admin
+     Senha: admin
+   
+   ✅ Você viu "Bem-vindo, Administrador!"?
+      SIM → Login funciona com Backend Real!
+
+═══════════════════════════════════════════════════════════════════════════
+🔑 CREDENCIAIS DE TESTE REAIS
+═══════════════════════════════════════════════════════════════════════════
+
+ADMIN (sempre funciona):
+  CPF/User: admin
+  Senha:    admin
+
+ADOTANTES (após executar seed):
+  CPF: 33333333333    Senha: 3333  (Carlos)
+  CPF: 44444444444    Senha: 4444  (Daniela)
+
+VOLUNTÁRIOS (após executar seed):
+  CPF: 11111111111    Senha: 1111  (Ana)
+  CPF: 22222222222    Senha: 2222  (Bruno)
+
+═══════════════════════════════════════════════════════════════════════════
+🌱 COMO CRIAR DADOS DE TESTE (Seed)
+═══════════════════════════════════════════════════════════════════════════
+
+OPÇÃO 1: Windows (Batch Script)
+─────────────────────────────────
+$ run-seed.bat
+
+Será criado:
+  - dats/adotantes.dat com Carlos e Daniela
+  - dats/voluntarios.dat com Ana e Bruno
+  - dats/ongs.dat com 2 ONGs
+  - dats/animais.dat com 3 animais de teste
+
+OPÇÃO 2: Linha de Comando
+─────────────────────────
+$ java -cp "Codigo/target/classes" br.com.mpet.Seed
+
+OPÇÃO 3: Menu CLI
+─────────────────
+Enquanto make run-with-server está rodando, use o menu
+para criar dados manualmente.
+
+═══════════════════════════════════════════════════════════════════════════
+✅ O QUE ESTÁ FUNCIONANDO AGORA
+═══════════════════════════════════════════════════════════════════════════
+
+✨ SessionManager.js foi atualizado:
+   ✅ Chama /api/auth/login (não mais mockado)
+   ✅ Valida CPF/senha contra Backend
+   ✅ Retorna dados reais do usuário
+   ✅ Armazena no localStorage
+
+✨ RestServer.java:
+   ✅ Recebe POST /api/auth/login
+   ✅ Valida contra AdotanteDataFileDao
+   ✅ Valida contra VoluntarioDataFileDao
+   ✅ Retorna JSON com user data + token
+
+✨ Login.html:
+   ✅ Formulário envia CPF + senha
+   ✅ Exibe mensagens de sucesso/erro
+   ✅ Redireciona após login bem-sucedido
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 COMO FUNCIONA INTERNAMENTE
+═══════════════════════════════════════════════════════════════════════════
+
+Frontend                Backend
+─────────────────────────────────────────────────
+Usuario digita:
+  CPF: admin
+  Senha: admin
+        ↓
+    click "Entrar"
+        ↓
+  SessionManager.login()
+        ↓
+  fetch('/api/auth/login', {
+    POST {cpf: "admin", senha: "admin"}
+  })
+        ↓ HTTP POST
+        ├────────────────→ RestServer.LoginHandler
+                         ├─ Parse JSON
+                         ├─ Try Admin check
+                         ├─ "admin" == "admin" ✓
+                         ├─ Build response
+                         └─ Return JSON
+        ↓ JSON Response
+  {success:true,
+   token:"...",
+   user:{cpf:"admin",
+         nome:"Administrador",
+         role:"ADMIN"}}
+        ↓
+  localStorage.setItem('user', ...)
+        ↓
+  Mostra: "✅ Bem-vindo, Administrador!"
+        ↓
+  window.location = 'index.html'
+        ↓
+  ✅ Login bem-sucedido!
+
+═══════════════════════════════════════════════════════════════════════════
+❌ TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════
+
+Problema: "Erro ao conectar ao servidor"
+Solução:
+  1. Verifique se fez: make run-with-server
+  2. Aguarde mensagem: ✅ Servidor iniciado com sucesso!
+  3. Teste API: curl http://localhost:8080/api/health
+  4. Tente novamente no navegador
+
+Problema: "CPF ou senha incorretos" (mesmo com admin/admin)
+Solução:
+  1. Verifique se digitou exatamente: "admin" (sem CPF)
+  2. Senha deve ser: "admin" (não vazio)
+  3. Observe maiúsculas/minúsculas
+  4. Teste via curl:
+     curl -X POST http://localhost:8080/api/auth/login \
+       -H "Content-Type: application/json" \
+       -d '{"cpf":"admin","senha":"admin"}'
+
+Problema: "CPF não encontrado" (para outros CPFs)
+Solução:
+  1. Você precisa criar seed data primeiro
+  2. Execute: run-seed.bat (ou Opção 2)
+  3. Aguarde: ✅ Dados de teste criados com sucesso!
+  4. Volte ao login
+  5. Teste com: 33333333333 / 3333
+
+═══════════════════════════════════════════════════════════════════════════
+📚 DOCUMENTAÇÃO
+═══════════════════════════════════════════════════════════════════════════
+
+Para mais informações, veja:
+  - COMO_TESTAR_LOGIN.md     (Guia detalhado)
+  - ENTREGA_FINAL.md          (Overview completo)
+  - SERVIDOR_REST.md          (Documentação técnica)
+  - EXEMPLO_LOGIN_ATUALIZADO.html (Código-exemplo)
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 FLUXO RECOMENDADO
+═══════════════════════════════════════════════════════════════════════════
+
+1. make build
+   ↓
+2. make run-with-server (Terminal 1)
+   ↓
+   Aguarde: ✅ Servidor iniciado com sucesso!
+   ↓
+3. run-seed.bat (Terminal 2 - opcional para dados reais)
+   ↓
+4. Abra navegador: http://localhost:8080/pages/login.html
+   ↓
+5. Teste com:
+   - admin / admin        (sempre funciona)
+   - 33333333333 / 3333   (se rodou seed)
+   ↓
+6. ✅ Bem-vindo!
+
+═══════════════════════════════════════════════════════════════════════════
+
+Criado: 2025
+Versão: 1.0
+Status: ✅ FUNCIONANDO COM BACKEND REAL
+

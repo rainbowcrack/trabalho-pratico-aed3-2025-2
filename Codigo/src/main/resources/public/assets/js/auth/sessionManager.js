@@ -35,24 +35,21 @@ const SessionManager = (function() {
     }
 
     /**
-     * Realiza login do usuário
+     * Realiza login do usuário via API REST
      * 
-     * STUB: Por enquanto apenas valida formato e salva no localStorage.
-     * FUTURO: Fazer POST /api/auth/login com CPF + senha criptografada.
+     * POST /api/auth/login com CPF + senha
+     * A resposta contém token e dados do usuário do backend
      * 
-     * @param {string} cpf - CPF do adotante (apenas números)
-     * @param {string} senha - Senha (será criptografada com RSA no backend)
+     * @param {string} cpf - CPF do adotante (pode ser "admin")
+     * @param {string} senha - Senha em texto plano (será enviada via POST)
      * @returns {Promise<{success: boolean, message: string, user?: object}>}
      */
     async function login(cpf, senha) {
-        // Simula delay de rede (200-500ms)
-        await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-
         // Validações de formato
-        if (!validateCpfFormat(cpf)) {
+        if (!validateCpfFormat(cpf) && cpf !== 'admin') {
             return {
                 success: false,
-                message: 'CPF inválido. Digite apenas os 11 números.'
+                message: 'CPF inválido. Digite apenas os 11 números ou "admin".'
             };
         }
 
@@ -63,82 +60,71 @@ const SessionManager = (function() {
             };
         }
 
-        const cleanCpf = cpf.replace(/\D/g, '');
+        const cleanCpf = cpf === 'admin' ? 'admin' : cpf.replace(/\D/g, '');
 
-        // MOCK: Base de usuários de teste
-        // Quando integrar com backend, remover e fazer POST /api/auth/login
-        const mockUsers = {
-            // ADMIN (credenciais especiais)
-            'admin': {
-                cpf: 'admin',
-                nome: 'Administrador',
-                email: 'admin@mpet.com',
-                role: 'ADMIN',
-                senha: 'admin'
-            },
-            // ADOTANTES (CPF como chave)
-            '12345678901': {
-                cpf: '12345678901',
-                idKey: 1,
-                nome: 'João Silva',
-                email: 'joao@teste.com',
-                telefone: '(11) 98765-4321',
-                role: 'ADOTANTE',
-                senha: '123'
-            },
-            '98765432100': {
-                cpf: '98765432100',
-                idKey: 2,
-                nome: 'Maria Santos',
-                email: 'maria@teste.com',
-                telefone: '(21) 99876-5432',
-                role: 'ADOTANTE',
-                senha: '123'
-            },
-            // VOLUNTÁRIOS (CPF como chave)
-            '11111111111': {
-                cpf: '11111111111',
-                idKey: 1,
-                nome: 'Pedro Voluntário',
-                email: 'pedro@ong.com',
-                telefone: '(11) 91234-5678',
-                role: 'VOLUNTARIO',
-                idOng: 1,
-                cargo: 'COORDENADOR',
-                senha: '123'
-            },
-            '22222222222': {
-                cpf: '22222222222',
-                idKey: 2,
-                nome: 'Ana Voluntária',
-                email: 'ana@ong.com',
-                telefone: '(21) 91234-5678',
-                role: 'VOLUNTARIO',
-                idOng: 1,
-                cargo: 'CUIDADOR',
-                senha: '123'
+        try {
+            // ✨ CHAMADA REAL À API REST ✨
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cpf: cleanCpf,
+                    senha: senha
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                return {
+                    success: false,
+                    message: data.error || 'CPF ou senha incorretos. Verifique suas credenciais.'
+                };
             }
+
+            // Sucesso: salva sessão com dados do backend
+            const user = data.user;
+            const sessionToken = data.token;
+            
+            // Salva usuário no localStorage
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+            localStorage.setItem(STORAGE_KEY_SESSION, sessionToken);
+
+            return {
+                success: true,
+                message: `✅ Bem-vindo, ${user.nome}!`,
+                user: user
+            };
+
+        } catch (error) {
+            console.error('Erro ao conectar com API:', error);
+            return {
+                success: false,
+                message: 'Erro ao conectar ao servidor. Verifique se o backend está rodando em localhost:8080.'
+            };
+        }
+
+        // ============ FALLBACK: Se API não responder, usar mock apenas para testes ============
+        // (Comentado - remover se quiser desabilitar fallback)
+        /*
+        const mockUsers = {
+            'admin': { cpf: 'admin', nome: 'Administrador', email: 'admin@mpet.com', role: 'ADMIN', senha: 'admin' },
+            '12345678901': { cpf: '12345678901', nome: 'João Silva', role: 'ADOTANTE', senha: '123' },
+            '11111111111': { cpf: '11111111111', nome: 'Pedro Voluntário', role: 'VOLUNTARIO', senha: '123' }
         };
-
-        // Busca usuário (admin usa "admin" como chave, outros usam CPF)
-        const userKey = cleanCpf === 'admin' ? 'admin' : cleanCpf;
-        const mockUser = mockUsers[userKey];
-
-        if (!mockUser) {
-            return {
-                success: false,
-                message: 'CPF não cadastrado. Teste: 12345678901 (Adotante) ou 11111111111 (Voluntário) ou admin/admin'
-            };
+        const mockUser = mockUsers[cleanCpf];
+        if (mockUser && mockUser.senha === senha) {
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(mockUser));
+            return { success: true, message: `Bem-vindo, ${mockUser.nome}!`, user: mockUser };
         }
+        return { success: false, message: 'CPF ou senha incorretos' };
+        */
+    }
 
-        // Valida senha
-        if (mockUser.senha !== senha) {
-            return {
-                success: false,
-                message: 'Senha incorreta.'
-            };
-        }
-
+    // ANTIGO CÓDIGO REMOVIDO
+    /*
         // Cria objeto de sessão (remove senha antes de salvar)
         const { senha: _, ...userWithoutPassword } = mockUser;
         const user = {
@@ -294,6 +280,29 @@ const SessionManager = (function() {
         }
     }
 
+    /**
+     * Salva URL para retornar após login
+     * @param {string} url 
+     */
+    function setSavedUrl(url) {
+        localStorage.setItem('mpet_saved_url', url);
+    }
+
+    /**
+     * Obtém URL salva para retornar após login
+     * @returns {string}
+     */
+    function getSavedUrl() {
+        return localStorage.getItem('mpet_saved_url') || 'index.html';
+    }
+
+    /**
+     * Limpa URL salva
+     */
+    function clearSavedUrl() {
+        localStorage.removeItem('mpet_saved_url');
+    }
+
     // API pública
     return {
         login,
@@ -305,6 +314,9 @@ const SessionManager = (function() {
         requireAuth,
         showLoginModal,
         returnToSavedUrl,
+        setSavedUrl,
+        getSavedUrl,
+        clearSavedUrl,
         updateUser,
         validateCpfFormat
     };
@@ -312,3 +324,4 @@ const SessionManager = (function() {
 
 // Exporta para uso global
 window.SessionManager = SessionManager;
+

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Chats - PetMatch</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .chats-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 200px);
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--card-bg);
+        }
+
+        .chats-list {
+            border-right: 1px solid #282834;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chats-list-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #282834;
+            background: var(--secondary);
+        }
+
+        .chats-list-header h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .chats-list-header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .chats-list-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #282834;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .chat-item:hover {
+            background: var(--secondary);
+        }
+
+        .chat-item.active {
+            background: rgba(255, 111, 97, 0.15);
+            border-left: 4px solid var(--primary-solid);
+            padding-left: calc(1.5rem - 4px);
+        }
+
+        .chat-item-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .chat-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-item-name {
+            font-weight: 600;
+            color: #fff;
+            margin: 0 0 0.3rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item-preview {
+            font-size: 0.85rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
+        .chat-item-time {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+
+        .chat-view {
+            display: flex;
+            flex-direction: column;
+            background: var(--background);
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #282834;
+            background: var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-info h2 {
+            margin: 0 0 0.3rem;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .chat-header-info p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .chat-header-btn {
+            background: none;
+            border: none;
+            color: var(--primary-solid);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+
+        .chat-header-btn:hover {
+            color: var(--accent);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.sent .message-content {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .message.received .message-content {
+            background: #282834;
+            color: #fff;
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .message-content {
+            max-width: 60%;
+            padding: 0.8rem 1.2rem;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 0.2rem;
+            text-align: center;
+        }
+
+        .chat-input-area {
+            padding: 1.5rem;
+            border-top: 1px solid #282834;
+            background: var(--secondary);
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #282834;
+            border-radius: 24px;
+            background: var(--background);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-solid);
+        }
+
+        .chat-send-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 111, 97, 0.3);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-chat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .empty-chat-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-chats-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--muted);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-chats-list-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 800px) {
+            .chats-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .chats-list {
+                border-right: none;
+                border-bottom: 1px solid #282834;
+                height: auto;
+                max-height: 300px;
+            }
+
+            .chat-view {
+                min-height: calc(100vh - 300px);
+            }
+
+            .message-content {
+                max-width: 80%;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .chats-container {
+                height: auto;
+            }
+
+            .chat-item {
+                padding: 0.8rem 1rem;
+            }
+
+            .chat-item-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .message-content {
+                max-width: 85%;
+                padding: 0.6rem 1rem;
+            }
+
+            .chat-input-area {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dog">
+    <header>
+        <nav style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="../assets/img/logo1.png" alt="Logo PetMatch" style="height: 80px; width: auto;">
+            </div>
+            <ul style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0;">
+                <!-- Preenchida dinamicamente -->
+            </ul>
+        </nav>
+    </header>
+
+    <main style="padding: 1.5rem 1rem;">
+        <div class="chats-container">
+            <!-- Lista de Chats -->
+            <div class="chats-list">
+                <div class="chats-list-header">
+                    <h2>Conversas</h2>
+                    <p id="chatsCount">Carregando...</p>
+                </div>
+                <div class="chats-list-content" id="chatsList">
+                    <div class="empty-chats-list">
+                        <div class="empty-chats-list-icon">💬</div>
+                        <h3>Nenhuma conversa ainda</h3>
+                        <p>Seus chats aparecerão aqui</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizador de Chat -->
+            <div class="chat-view">
+                <div id="chatSelected" style="display: none; height: 100%; display: flex; flex-direction: column;">
+                    <div class="chat-header">
+                        <div class="chat-header-info">
+                            <h2 id="chatCurrentName">Chat</h2>
+                            <p id="chatCurrentOng">ONG - Voluntário</p>
+                        </div>
+                        <button class="chat-header-btn" onclick="openAnimalProfile()">👁️</button>
+                    </div>
+
+                    <div class="chat-messages" id="messagesList">
+                        <!-- Mensagens carregadas aqui -->
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input 
+                            type="text" 
+                            class="chat-input" 
+                            id="messageInput" 
+                            placeholder="Digite sua mensagem..."
+                            maxlength="500"
+                        >
+                        <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+
+                <div id="chatEmpty" class="empty-chat">
+                    <div class="empty-chat-icon">💭</div>
+                    <h2>Selecione uma conversa</h2>
+                    <p>Escolha um chat à esquerda para começar a conversar</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer style="background: var(--primary); color: #fff; text-align: center; padding: 1rem; border-top-left-radius: var(--border-radius); border-top-right-radius: var(--border-radius); margin-top: 2rem;">
+        © 2025 - PetMatch. Feito com ❤️ para adoção responsável.
+    </footer>
+
+    <!-- Scripts: Ordem CRÍTICA -->
+    <script src="../assets/js/models.js"></script>
+    <script src="../assets/js/auth/sessionManager.js"></script>
+    <script src="../assets/js/auth/router.js"></script>
+    <script src="../assets/js/utils/navigation.js"></script>
+    <script>
+        // Estado global
+        let currentChatId = null;
+        let allChats = [];
+
+        /**
+         * Protege página: só acessível se autenticado
+         */
+        function initPage() {
+            if (!protectRoute()) return;
+
+            const user = SessionManager.getCurrentUser();
+            renderNavbar('meus-chats');
+            loadChats(user.role, user.cpf);
+        }
+
+        /**
+         * Carrega lista de chats do usuário
+         */
+        async function loadChats(userRole, userCpf) {
+            try {
+                // FUTURO: Buscar via API /api/chats
+                // MOCK: Simula chats do usuário
+                allChats = [
+                    {
+                        threadId: 1,
+                        animalName: 'Luna',
+                        animalIcon: '🐕',
+                        volunteerName: 'Pedro Voluntário',
+                        ongName: 'Patinhas Felizes',
+                        lastMessage: 'Ótimo! Luna está pronta para conhecer você!',
+                        lastTime: '14:32',
+                        unread: 2,
+                        messages: [
+                            {
+                                id: 1,
+                                sender: 'VOLUNTARIO',
+                                content: 'Olá! Tudo bem com você?',
+                                timestamp: '10:15'
+                            },
+                            {
+                                id: 2,
+                                sender: 'ADOTANTE',
+                                content: 'Oi! Tudo certo! Queria saber mais sobre a Luna',
+                                timestamp: '10:20'
+                            },
+                            {
+                                id: 3,
+                                sender: 'VOLUNTARIO',
+                                content: 'Ótimo! Luna está pronta para conhecer você!',
+                                timestamp: '14:32'
+                            }
+                        ]
+                    },
+                    {
+                        threadId: 2,
+                        animalName: 'Miau',
+                        animalIcon: '🐱',
+                        volunteerName: 'Ana Voluntária',
+                        ongName: 'Resgate Animal RJ',
+                        lastMessage: 'Você pode vir conhecê-lo amanhã?',
+                        lastTime: '09:45',
+                        unread: 0,
+                        messages: [
+                            {
+                                id: 1,
+                                sender: 'ADOTANTE',
+                                content: 'Olá! Tenho interesse no Miau',
+                                timestamp: '09:00'
+                            },
+                            {
+                                id: 2,
+                                sender: 'VOLUNTARIO',
+                                content: 'Ótimo! Você pode vir conhecê-lo amanhã?',
+                                timestamp: '09:45'
+                            }
+                        ]
+                    }
+                ];
+
+                if (allChats.length === 0) {
+                    document.getElementById('chatsList').innerHTML = `
+                        <div class="empty-chats-list">
+                            <div class="empty-chats-list-icon">💬</div>
+                            <h3>Nenhuma conversa ainda</h3>
+                            <p>Seus chats aparecerão aqui</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderChatsList();
+                selectChat(allChats[0].threadId);
+
+            } catch (error) {
+                console.error('Erro ao carregar chats:', error);
+                document.getElementById('chatsList').innerHTML = `
+                    <div class="empty-chats-list">
+                        <div class="empty-chats-list-icon">😞</div>
+                        <h3>Erro ao carregar</h3>
+                        <p>Não conseguimos carregar seus chats</p>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Renderiza lista de chats
+         */
+        function renderChatsList() {
+            const listContainer = document.getElementById('chatsList');
+            listContainer.innerHTML = '';
+
+            allChats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                chatItem.onclick = () => selectChat(chat.threadId);
+
+                chatItem.innerHTML = `
+                    <div class="chat-item-avatar">
+                        ${chat.animalIcon}
+                    </div>
+                    <div class="chat-item-content">
+                        <p class="chat-item-name">${chat.animalName} - ${chat.volunteerName}</p>
+                        <p class="chat-item-preview">${chat.lastMessage}</p>
+                        <div class="chat-item-time">${chat.lastTime}</div>
+                    </div>
+                `;
+
+                listContainer.appendChild(chatItem);
+            });
+
+            document.getElementById('chatsCount').textContent = `${allChats.length} conversas`;
+        }
+
+        /**
+         * Seleciona um chat
+         */
+        function selectChat(threadId) {
+            currentChatId = threadId;
+
+            // Atualiza UI
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget?.classList.add('active');
+
+            const chat = allChats.find(c => c.threadId === threadId);
+            if (!chat) return;
+
+            document.getElementById('chatCurrentName').textContent = `${chat.animalIcon} ${chat.animalName}`;
+            document.getElementById('chatCurrentOng').textContent = `${chat.ongName} - ${chat.volunteerName}`;
+
+            renderMessages(chat.messages);
+
+            document.getElementById('chatSelected').style.display = 'flex';
+            document.getElementById('chatEmpty').style.display = 'none';
+
+            // Scroll para final
+            setTimeout(() => {
+                const messagesList = document.getElementById('messagesList');
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }, 100);
+        }
+
+        /**
+         * Renderiza mensagens de um chat
+         */
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesList');
+            container.innerHTML = '';
+
+            messages.forEach(msg => {
+                const msgEl = document.createElement('div');
+                msgEl.className = `message ${msg.sender === 'ADOTANTE' ? 'sent' : 'received'}`;
+
+                msgEl.innerHTML = `
+                    <div>
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        <div class="message-time">${msg.timestamp}</div>
+                    </div>
+                `;
+
+                container.appendChild(msgEl);
+            });
+        }
+
+        /**
+         * Envia mensagem
+         */
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Simula envio
+            const chat = allChats.find(c => c.threadId === currentChatId);
+            if (chat) {
+                const now = new Date();
+                const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+                chat.messages.push({
+                    id: chat.messages.length + 1,
+                    sender: 'ADOTANTE',
+                    content: message,
+                    timestamp: time
+                });
+
+                renderMessages(chat.messages);
+                input.value = '';
+
+                // Scroll para final
+                setTimeout(() => {
+                    const messagesList = document.getElementById('messagesList');
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                }, 50);
+
+                // Simula resposta automática (FUTURO: remover quando integrar com backend)
+                setTimeout(() => {
+                    chat.messages.push({
+                        id: chat.messages.length + 1,
+                        sender: 'VOLUNTARIO',
+                        content: 'Obrigado pela mensagem! Vou verificar e retorno em breve.',
+                        timestamp: time
+                    });
+
+                    renderMessages(chat.messages);
+                    const messagesList = document.getElementById('messagesList');
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                }, 1500);
+            }
+        }
+
+        /**
+         * Abre perfil do animal
+         */
+        function openAnimalProfile() {
+            if (currentChatId) {
+                const chat = allChats.find(c => c.threadId === currentChatId);
+                if (chat) {
+                    window.location.href = `meus-matches.html#${chat.animalName}`;
+                }
+            }
+        }
+
+        /**
+         * Escapa HTML para evitar XSS
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enter para enviar
+        document.addEventListener('DOMContentLoaded', () => {
+            initPage();
+
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

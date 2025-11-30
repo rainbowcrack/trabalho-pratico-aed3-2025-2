@@ -267,7 +267,71 @@ java -cp "Codigo/target/classes" br.com.mpet.TesteCompleto
 ───────────────────────────────────
    TOTAL:                22/22 (100%)
 ```
+---
+# 🔍 Implementação de Casamento de Padrões: KMP e Boyer-Moore
 
+Este documento detalha a implementação e o uso dos algoritmos de casamento de padrões no sistema MPet.
+
+## 1. Visão Geral
+
+A funcionalidade de busca por nome para Adotantes e Voluntários foi implementada para permitir que o administrador encontre registros de forma rápida e flexível. Em vez de uma busca por correspondência exata, o sistema utiliza algoritmos de casamento de padrões que localizam um "padrão" (termo de busca) dentro de um "texto" (nome completo do usuário).
+
+Foram implementados dois algoritmos clássicos para essa finalidade:
+- **Knuth-Morris-Pratt (KMP)**
+- **Boyer-Moore** (com a heurística do mau caractere)
+
+## 2. Estrutura dos Arquivos
+
+A funcionalidade está organizada nas seguintes classes dentro do pacote `br.com.mpet`:
+
+- **`KMP.java`**: Contém a lógica do algoritmo KMP.
+  - `computeLPSArray(String pattern)`: Pré-processa o padrão para criar a tabela LPS (Longest Proper Prefix which is also Suffix).
+  - `search(String text, String pattern)`: Executa a busca e retorna uma lista de índices onde o padrão foi encontrado.
+
+- **`BoyerMoore.java`**: Contém a lógica do algoritmo Boyer-Moore.
+  - `buildBadCharTable(String pattern)`: Pré-processa o padrão para criar a tabela de "mau caractere", que otimiza os saltos durante a busca.
+  - `search(String text, String pattern)`: Executa a busca e retorna uma lista de índices.
+
+- **`PatternSearcher.java`**: Atua como uma fachada (*Facade*) para simplificar o uso dos algoritmos.
+  - `Algorithm` (enum): Define os algoritmos disponíveis (`KMP`, `BOYER_MOORE`).
+  - `search(String text, String pattern, Algorithm algo)`: Método principal que recebe o texto, o padrão e o algoritmo desejado, e retorna `true` se encontrar pelo menos uma ocorrência.
+
+- **`Interface.java`**: Integra a funcionalidade na interface de linha de comando (CLI).
+  - `pesquisarAdotantePorNome()`: Lida com a interação do usuário para buscar adotantes.
+  - `pesquisarVoluntarioPorNome()`: Lida com a interação do usuário para buscar voluntários.
+
+## 3. Como Funciona
+
+O fluxo de execução da busca é o seguinte:
+
+1.  O administrador seleciona a opção de "Pesquisar por Nome" no menu de Adotantes ou Voluntários.
+2.  A `Interface.java` solicita o **termo de busca** e o **algoritmo** a ser utilizado (KMP ou Boyer-Moore).
+3.  A `Interface.java` obtém a lista de todos os usuários ativos do respectivo DAO (ex: `adotanteDao.listAllActive()`).
+4.  Para cada usuário na lista, a interface chama o método `PatternSearcher.search()`, passando o nome completo do usuário como "texto" e o termo de busca como "padrão".
+5.  O `PatternSearcher` delega a chamada para a classe `KMP` ou `BoyerMoore`, conforme a escolha do usuário.
+6.  O algoritmo de busca retorna uma lista de posições onde o padrão foi encontrado. Se a lista não estiver vazia, o `PatternSearcher` retorna `true`.
+7.  A `Interface.java` coleta todos os usuários para os quais a busca retornou `true` e os exibe na tela.
+
+### Exemplo de Código na `Interface.java`:
+
+```java
+private static void pesquisarAdotantePorNome(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+    // ... (solicita termo e algoritmo)
+
+    PatternSearcher patternSearcher = new PatternSearcher();
+    List<Adotante> todos = dao.listAllActive();
+    List<Adotante> encontrados = new ArrayList<>();
+
+    for (Adotante adotante : todos) {
+        // A busca é feita aqui
+        if (adotante.getNomeCompleto() != null && patternSearcher.search(adotante.getNomeCompleto(), termo, algo)) {
+            encontrados.add(adotante);
+        }
+    }
+
+    // ... (exibe resultados)
+}
+```
 ---
 
 ## 📊 Entidades do Sistema
@@ -492,28 +556,6 @@ Sempre verificar null **antes** de chamar métodos `Codec`:
 | Huffman | Binário | 30-50% |
 
 **Conclusão**: Overhead de criptografia e compressão é negligenciável para CLI.
-
----
-
-## 🔮 Futuras Evoluções
-
-### Curto Prazo
-- [ ] Implementar rotação de chaves RSA
-- [ ] Adicionar auditoria de acessos
-- [ ] Criptografar CPF também
-- [ ] Implementar rate limiting em login
-
-### Médio Prazo
-- [ ] Integração com HSM
-- [ ] Certificados X.509
-- [ ] TLS/SSL para comunicação
-- [ ] TOTP/2FA para usuários
-
-### Longo Prazo
-- [ ] Migração para banco SQL
-- [ ] API REST com OAuth2
-- [ ] Interface web com HTTPS
-- [ ] Compliance LGPD/GDPR
 
 ---
 

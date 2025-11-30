@@ -1,5 +1,6 @@
 package br.com.mpet;
 
+import br.com.mpet.PatternSearcher;
 import br.com.mpet.model.*;
 import br.com.mpet.persistence.dao.AnimalDataFileDao;
 import br.com.mpet.persistence.dao.AdotanteDataFileDao;
@@ -815,12 +816,14 @@ public class Interface {
             System.out.println("3) Listar Todos");
             System.out.println("4) Editar Adotante");
             System.out.println("5) Remover Adotante");
+            System.out.println("6) Pesquisar Adotante por Nome");
             System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
             try {
                 switch (op) {
                     case "1" -> criarAdotante(sc, dao);
+                    case "6" -> pesquisarAdotantePorNome(sc, dao);
                     case "2" -> lerAdotante(sc, dao);
                     case "3" -> listarAdotantes(dao);
                     case "4" -> editarAdotante(sc, dao);
@@ -842,12 +845,14 @@ public class Interface {
             System.out.println("3) Listar Todos");
             System.out.println("4) Editar Voluntário");
             System.out.println("5) Remover Voluntário");
+            System.out.println("6) Pesquisar Voluntário por Nome");
             System.out.println(ANSI_RED + "0) Voltar" + ANSI_RESET);
             System.out.print("Escolha: ");
             String op = sc.nextLine().trim();
             try {
                 switch (op) {
                     case "1" -> criarVoluntario(sc, dao);
+                    case "6" -> pesquisarVoluntarioPorNome(sc, dao);
                     case "2" -> lerVoluntario(sc, dao);
                     case "3" -> listarVoluntarios(dao);
                     case "4" -> editarVoluntario(sc, dao);
@@ -1039,6 +1044,73 @@ public class Interface {
         else System.out.println(ANSI_YELLOW + "Não encontrado." + ANSI_RESET);
     }
 
+    private static void pesquisarAdotantePorNome(Scanner sc, AdotanteDataFileDao dao) throws IOException {
+        System.out.println(ANSI_CYAN + "\n--- Pesquisar Adotante por Nome ---" + ANSI_RESET);
+        String termo = perguntarString(sc, "Termo de busca", null);
+        if (termo == null || termo.isBlank()) {
+            showWarning("Termo de busca não pode ser vazio.");
+            return;
+        }
+
+        System.out.println("Escolha o algoritmo de busca:");
+        System.out.println("1) KMP");
+        System.out.println("2) Boyer-Moore");
+        System.out.print("Opção: ");
+        String op = sc.nextLine().trim();
+
+        PatternSearcher.Algorithm algo;
+        switch (op) {
+            case "1" -> algo = PatternSearcher.Algorithm.KMP;
+            case "2" -> algo = PatternSearcher.Algorithm.BOYER_MOORE;
+            default -> {
+                showError("Opção inválida. Usando KMP como padrão.");
+                algo = PatternSearcher.Algorithm.KMP;
+            }
+        }
+
+        PatternSearcher patternSearcher = new PatternSearcher();
+        List<Adotante> todos = dao.listAllActive();
+        List<Adotante> encontrados = new ArrayList<>();
+
+        for (Adotante adotante : todos) {
+            if (adotante.getNomeCompleto() != null && patternSearcher.search(adotante.getNomeCompleto(), termo, algo)) {
+                encontrados.add(adotante);
+            }
+        }
+
+        if (encontrados.isEmpty()) {
+            showInfo("Nenhum adotante encontrado com o termo '" + termo + "'.");
+        } else {
+            showSuccess(encontrados.size() + " adotante(s) encontrado(s):");
+            encontrados.forEach(Interface::imprimirAdotante);
+        }
+    }
+
+    private static void pesquisarVoluntarioPorNome(Scanner sc, VoluntarioDataFileDao dao) throws IOException {
+        System.out.println(ANSI_CYAN + "\n--- Pesquisar Voluntário por Nome ---" + ANSI_RESET);
+        String termo = perguntarString(sc, "Termo de busca", null);
+        if (termo == null || termo.isBlank()) {
+            showWarning("Termo de busca não pode ser vazio.");
+            return;
+        }
+
+        System.out.println("Escolha o algoritmo de busca:");
+        System.out.println("1) KMP");
+        System.out.println("2) Boyer-Moore");
+        System.out.print("Opção: ");
+        String op = sc.nextLine().trim();
+
+        PatternSearcher.Algorithm algo = "2".equals(op) ? PatternSearcher.Algorithm.BOYER_MOORE : PatternSearcher.Algorithm.KMP;
+
+        PatternSearcher patternSearcher = new PatternSearcher();
+        List<Voluntario> todos = dao.listAllActive();
+        List<Voluntario> encontrados = todos.stream()
+                .filter(v -> v.getNome() != null && patternSearcher.search(v.getNome(), termo, algo))
+                .toList();
+
+        showInfo(encontrados.size() + " voluntário(s) encontrado(s) com o termo '" + termo + "'.");
+        encontrados.forEach(Interface::imprimirVoluntario);
+    }
 
     // =================================================================================
     // MENU SISTEMA

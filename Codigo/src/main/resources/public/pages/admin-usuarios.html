@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Usuários</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <script defer src="/assets/js/auth/sessionManager.js"></script>
+  <script defer src="/assets/js/utils/emptyState.js"></script>
+  <script defer src="/assets/js/utils/loadingSpinner.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div>
+        <a href="/pages/admin.html">Admin</a>
+      </div>
+      <nav class="nav">
+        <a href="/pages/admin.html">Dashboard</a>
+        <a href="/pages/admin-ongs.html">ONGs</a>
+        <a href="/pages/admin-usuarios.html" class="active">Usuários</a>
+        <a href="/pages/admin-animais.html">Animais</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Gerenciar Usuários</h1>
+    <div class="table-actions">
+      <button class="btn primary" id="btnNovoAdotante">Novo Adotante</button>
+      <button class="btn primary" id="btnNovoVoluntario">Novo Voluntário</button>
+    </div>
+    <div class="card">
+      <table class="table" id="tabela-usuarios">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>ONG</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">MPet • Admin Usuários</div>
+  </footer>
+
+  <script>
+    (async function(){
+      const session = await window.SessionManager?.getSession();
+      if(!session || session.role !== 'ADMIN') { showAlert('Acesso restrito.', 'error'); location.href='/pages/login.html'; return; }
+
+      const tbody = document.querySelector('#tabela-usuarios tbody');
+      const btnNovoA = document.getElementById('btnNovoAdotante');
+      const btnNovoV = document.getElementById('btnNovoVoluntario');
+
+      async function carregar(){
+        LoadingSpinner.showPageLoading();
+        try {
+          const [adotantes, voluntarios, ongs] = await Promise.all([
+            fetch('/api/adotantes').then(r=>r.json()),
+            fetch('/api/voluntarios').then(r=>r.json()),
+            fetch('/api/ongs').then(r=>r.json()),
+          ]);
+          const ongById = Object.fromEntries(ongs.map(o=>[o.id, o.nome]));
+          tbody.innerHTML = '';
+          const rows = [];
+          for(const a of adotantes){ rows.push({ tipo:'ADOTANTE', nome:a.nome, cpf:a.cpf, ong:'-' }); }
+          for(const v of voluntarios){ rows.push({ tipo:'VOLUNTARIO', nome:v.nome, cpf:v.cpf, ong: ongById[v.idOng] || '-' }); }
+          if(!rows.length){
+            EmptyState.renderInto(tbody, { title: 'Nenhum usuário', description: 'Cadastre adotantes ou voluntários.' });
+            return;
+          }
+          for(const r of rows){
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${r.tipo}</td>
+              <td>${r.nome}</td>
+              <td>${r.cpf}</td>
+              <td>${r.ong}</td>
+              <td class="table-actions">
+                <button class="btn" data-edit="${r.cpf}">Editar</button>
+                <button class="btn danger" data-del="${r.cpf}">Excluir</button>
+              </td>`;
+            tbody.appendChild(tr);
+          }
+        } catch(e){ showAlert('Erro ao carregar usuários', 'error'); }
+        finally { LoadingSpinner.hidePageLoading(); }
+      }
+
+      btnNovoA.addEventListener('click', async ()=>{
+        const nome = prompt('Nome:');
+        const cpf = prompt('CPF:');
+        const senha = prompt('Senha:');
+        if(!nome || !cpf || !senha) return;
+        const btn = btnNovoA; LoadingSpinner.showButtonLoading(btn);
+        try{
+          const res = await fetch('/api/adotantes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, cpf, senha }) });
+          if(!res.ok) throw new Error('Falha ao criar');
+          showAlert('Adotante criado', 'success'); carregar();
+        }catch(e){ showAlert('Erro ao criar adotante', 'error'); }
+        finally{ LoadingSpinner.hideButtonLoading(btn); }
+      });
+
+      btnNovoV.addEventListener('click', async ()=>{
+        const nome = prompt('Nome:');
+        const cpf = prompt('CPF:');
+        const idOng = prompt('ID da ONG:');
+        const cargo = prompt('Cargo:');
+        const senha = prompt('Senha:');
+        if(!nome || !cpf || !idOng || !senha) return;
+        const btn = btnNovoV; LoadingSpinner.showButtonLoading(btn);
+        try{
+          const res = await fetch('/api/voluntarios', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, cpf, idOng: Number(idOng), cargo, senha }) });
+          if(!res.ok) throw new Error('Falha ao criar');
+          showAlert('Voluntário criado', 'success'); carregar();
+        }catch(e){ showAlert('Erro ao criar voluntário', 'error'); }
+        finally{ LoadingSpinner.hideButtonLoading(btn); }
+      });
+
+      document.body.addEventListener('click', async (ev)=>{
+        const editCpf = ev.target.getAttribute('data-edit');
+        const delCpf = ev.target.getAttribute('data-del');
+        if(editCpf){
+          const novoNome = prompt('Novo nome:');
+          if(!novoNome) return;
+          const btn = ev.target; LoadingSpinner.showButtonLoading(btn);
+          try{
+            const res = await fetch(`/api/adotantes/${editCpf}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome: novoNome }) });
+            if(!res.ok) throw new Error('Falha ao editar');
+            showAlert('Usuário editado', 'success'); carregar();
+          }catch(e){ showAlert('Erro ao editar usuário', 'error'); }
+          finally{ LoadingSpinner.hideButtonLoading(btn); }
+        }
+        if(delCpf){
+          if(!confirm('Confirmar exclusão?')) return;
+          const btn = ev.target; LoadingSpinner.showButtonLoading(btn);
+          try{
+            const res = await fetch(`/api/adotantes/${delCpf}`, { method:'DELETE' });
+            if(!res.ok) throw new Error('Falha ao excluir');
+            showAlert('Usuário excluído', 'success'); carregar();
+          }catch(e){ showAlert('Erro ao excluir usuário', 'error'); }
+          finally{ LoadingSpinner.hideButtonLoading(btn); }
+        }
+      });
+
+      carregar();
+    })();
+  </script>
+</body>
+</html>

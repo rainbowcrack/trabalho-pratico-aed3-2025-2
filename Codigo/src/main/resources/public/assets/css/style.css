@@ -25,6 +25,110 @@ body {
   min-height: 100vh;
 }
 
+/* Layout base responsivo */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .grid.sm-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.sm-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 960px) {
+  .grid.md-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.md-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.md-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+header.site-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nav a {
+  color: #333;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.nav a.active { background: #eef2ff; color: #1f3cf7; }
+
+footer.site-footer {
+  margin-top: 40px;
+  padding: 24px 16px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  color: #666;
+}
+
+/* Tabela responsiva */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.table th, .table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.table thead th { background: #f3f4f6; font-weight: 600; }
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.btn.primary { background: #1f3cf7; color: white; border-color: #1f3cf7; }
+.btn.danger { background: #ef4444; color: white; border-color: #ef4444; }
+.btn.success { background: #10b981; color: white; border-color: #10b981; }
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.page-title {
+  margin: 8px 0 16px 0;
+
 header {
   position: sticky;
   top: 0;

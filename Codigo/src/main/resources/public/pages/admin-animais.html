@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Animais</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <script defer src="/assets/js/auth/sessionManager.js"></script>
+  <script defer src="/assets/js/utils/emptyState.js"></script>
+  <script defer src="/assets/js/utils/loadingSpinner.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div>
+        <a href="/pages/admin.html">Admin</a>
+      </div>
+      <nav class="nav">
+        <a href="/pages/admin.html">Dashboard</a>
+        <a href="/pages/admin-ongs.html">ONGs</a>
+        <a href="/pages/admin-usuarios.html">Usuários</a>
+        <a href="/pages/admin-animais.html" class="active">Animais</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Gerenciar Animais</h1>
+    <div class="table-actions">
+      <button class="btn primary" id="btnNovoAnimal">Novo Animal</button>
+    </div>
+    <div class="card">
+      <table class="table" id="tabela-animais">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>ONG</th>
+            <th>Tipo</th>
+            <th>Porte</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">MPet • Admin Animais</div>
+  </footer>
+
+  <script>
+    (async function(){
+      const session = await window.SessionManager?.getSession();
+      if(!session || session.role !== 'ADMIN') { showAlert('Acesso restrito.', 'error'); location.href='/pages/login.html'; return; }
+
+      const tbody = document.querySelector('#tabela-animais tbody');
+      const btnNovo = document.getElementById('btnNovoAnimal');
+
+      async function carregar(){
+        LoadingSpinner.showPageLoading();
+        try {
+          const [animais, ongs] = await Promise.all([
+            fetch('/api/animais').then(r=>r.json()),
+            fetch('/api/ongs').then(r=>r.json()),
+          ]);
+          const ongById = Object.fromEntries(ongs.map(o=>[o.id, o.nome]));
+          tbody.innerHTML = '';
+          if(!animais.length){
+            EmptyState.renderInto(tbody, EmptyState.types.animals || { title: 'Nenhum animal', description: 'Cadastre o primeiro.' });
+            return;
+          }
+          for(const a of animais){
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${a.id}</td>
+              <td>${a.nome}</td>
+              <td>${ongById[a.idOng] || '-'}</td>
+              <td>${a.tipo || '-'}</td>
+              <td>${a.porte || '-'}</td>
+              <td>${a.adotado ? 'ADOTADO' : 'DISPONÍVEL'}</td>
+              <td class="table-actions">
+                <button class="btn" data-edit="${a.id}">Editar</button>
+                <button class="btn danger" data-del="${a.id}">Excluir</button>
+              </td>`;
+            tbody.appendChild(tr);
+          }
+        } catch(e){ showAlert('Erro ao carregar animais', 'error'); }
+        finally { LoadingSpinner.hidePageLoading(); }
+      }
+
+      btnNovo.addEventListener('click', async ()=>{
+        const nome = prompt('Nome:');
+        const idOng = prompt('ID da ONG:');
+        const tipo = prompt('Tipo (CACHORRO/GATO):');
+        const porte = prompt('Porte (PEQUENO/MEDIO/GRANDE):');
+        const imageUrl = prompt('URL da imagem (opcional):');
+        if(!nome || !idOng || !tipo) return;
+        const btn = btnNovo; LoadingSpinner.showButtonLoading(btn);
+        try{
+          const res = await fetch('/api/animais', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, idOng: Number(idOng), tipo, porte, imageUrl }) });
+          if(!res.ok) throw new Error('Falha ao criar');
+          showAlert('Animal criado', 'success'); carregar();
+        }catch(e){ showAlert('Erro ao criar animal', 'error'); }
+        finally{ LoadingSpinner.hideButtonLoading(btn); }
+      });
+
+      document.body.addEventListener('click', async (ev)=>{
+        const editId = ev.target.getAttribute('data-edit');
+        const delId = ev.target.getAttribute('data-del');
+        if(editId){
+          const novoNome = prompt('Novo nome:');
+          if(!novoNome) return;
+          const btn = ev.target; LoadingSpinner.showButtonLoading(btn);
+          try{
+            const res = await fetch(`/api/animais/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome: novoNome }) });
+            if(!res.ok) throw new Error('Falha ao editar');
+            showAlert('Animal editado', 'success'); carregar();
+          }catch(e){ showAlert('Erro ao editar animal', 'error'); }
+          finally{ LoadingSpinner.hideButtonLoading(btn); }
+        }
+        if(delId){
+          if(!confirm('Confirmar exclusão?')) return;
+          const btn = ev.target; LoadingSpinner.showButtonLoading(btn);
+          try{
+            const res = await fetch(`/api/animais/${delId}`, { method:'DELETE' });
+            if(!res.ok) throw new Error('Falha ao excluir');
+            showAlert('Animal excluído', 'success'); carregar();
+          }catch(e){ showAlert('Erro ao excluir animal', 'error'); }
+          finally{ LoadingSpinner.hideButtonLoading(btn); }
+        }
+      });
+
+      carregar();
+    })();
+  </script>
+</body>
+</html>

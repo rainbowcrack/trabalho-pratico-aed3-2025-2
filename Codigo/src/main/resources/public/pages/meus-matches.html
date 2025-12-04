@@ -277,6 +277,8 @@
     <script src="../assets/js/auth/router.js"></script>
     <script src="../assets/js/utils/navigation.js"></script>
     <script src="../assets/js/utils/petAdapter.js"></script>
+    <script src="../assets/js/utils/emptyState.js"></script>
+    <script src="../assets/js/utils/loadingSpinner.js"></script>
     <script src="../assets/js/services/petService.js"></script>
     <script>
         /**
@@ -296,27 +298,16 @@
         async function loadMyMatches(userCpf) {
             const content = document.getElementById('matchesContent');
             
-            // Loading state
-            content.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">⏳</div>
-                    <h2>Carregando seus matches...</h2>
-                </div>
-            `;
+            // Mostra loading
+            const hideLoading = LoadingSpinner.show(content, 'matches');
 
             try {
                 // Buscar matches reais via API
                 const result = await PetService.getMyMatches(userCpf);
                 
                 if (!result.success || result.data.length === 0) {
-                    content.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🔍</div>
-                            <h2>Você ainda não tem matches</h2>
-                            <p>Explore nossos animais disponíveis e demonstre interesse nos que mais gostou!</p>
-                            <a href="match.html" class="empty-state-btn">Explorar Animais</a>
-                        </div>
-                    `;
+                    hideLoading();
+                    EmptyState.render(content, 'matches');
                     return;
                 }
 
@@ -328,19 +319,15 @@
                     grid.appendChild(card);
                 });
 
-                content.innerHTML = '';
+                hideLoading();
                 content.appendChild(grid);
 
             } catch (error) {
                 console.error('Erro ao carregar matches:', error);
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">😞</div>
-                        <h2>Erro ao carregar</h2>
-                        <p>Não conseguimos carregar seus matches. Tente novamente.</p>
-                        <button class="empty-state-btn" onclick="location.reload()">Tentar Novamente</button>
-                    </div>
-                `;
+                hideLoading();
+                EmptyState.render(content, 'error', {
+                    message: 'Não conseguimos carregar seus matches no momento. Verifique sua conexão e tente novamente.'
+                });
             }
         }
 

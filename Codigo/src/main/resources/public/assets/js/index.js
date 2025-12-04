@@ -37,31 +37,6 @@ function createHearts(color = '#ff3b3b') {
 }
 
 /**
- * Exibe notificação toast
- * @param {string} message - Mensagem
- * @param {string} type - 'success' | 'error' | 'info'
- */
-function showToast(message, type = 'info') {
-    // Remove toast anterior se existir
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) existingToast.remove();
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    // Anima entrada
-    setTimeout(() => toast.classList.add('show'), 10);
-
-    // Remove após 3s
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-/**
  * Renderiza card do pet
  * @param {number} index - Índice do pet no array
  */
@@ -112,7 +87,12 @@ function renderCard(index) {
 
     // Handler: Curtir (registra interesse)
     card.querySelector('.like').onclick = async () => {
-        // Desabilita botões durante animação
+        const likeButton = card.querySelector('.like');
+        
+        // Mostra loading no botão
+        const hideButtonLoading = LoadingSpinner.showButton(likeButton, 'sending');
+        
+        // Desabilita botões durante operação
         card.querySelectorAll('.action-btn').forEach(btn => btn.disabled = true);
 
         // Animação de saída
@@ -128,11 +108,14 @@ function renderCard(index) {
         const cpf = SessionManager.getCurrentCpf();
         const result = await PetService.registerInterest(cpf, pet.id);
 
+        // Esconde loading
+        hideButtonLoading();
+
         // Feedback
         if (result.success) {
-            showToast(result.message, 'success');
+            showAlert(result.message, 'success');
         } else {
-            showToast(result.message, 'error');
+            showAlert(result.message, 'error');
         }
 
         // Avança para próximo
@@ -169,8 +152,9 @@ async function init() {
         return;
     }
 
-    // 2. Busca pets do serviço
-    showToast('Carregando pets...', 'info');
+    // 2. Busca pets do serviço com loading
+    const container = document.getElementById('appContainer');
+    const hideLoading = LoadingSpinner.show(container, 'pets');
     
     try {
         const result = await PetService.getAvailablePets();
@@ -179,23 +163,28 @@ async function init() {
             // 3. Adapta dados para View Models
             currentPets = PetAdapter.adaptList(result.data);
             
-            // 4. Renderiza primeiro card
+            // 4. Esconde loading e renderiza primeiro card
+            hideLoading();
             currentIndex = 0;
             renderCard(currentIndex);
         } else {
-            // Sem pets disponíveis
-            const container = document.getElementById('appContainer');
-            container.innerHTML = `
-                <div class="pet-card" style="text-align: center; padding: 40px;">
-                    <div style="font-size: 4rem; margin-bottom: 20px;">🐾</div>
-                    <h2>Nenhum pet disponível no momento</h2>
-                    <p style="margin: 20px 0;">Volte em breve para conhecer novos amiguinhos!</p>
-                </div>
-            `;
+            // Esconde loading e mostra empty state
+            hideLoading();
+            EmptyState.render(container, 'animals', {
+                message: 'No momento não há pets disponíveis para adoção. Volte em breve para conhecer novos amiguinhos!',
+                ctaText: 'Atualizar página',
+                ctaAction: () => window.location.reload()
+            });
         }
     } catch (error) {
         console.error('Erro ao carregar pets:', error);
-        showToast('Erro ao carregar pets. Recarregue a página.', 'error');
+        // Esconde loading e mostra erro
+        hideLoading();
+        EmptyState.render(container, 'error', {
+            message: 'Não foi possível carregar os pets. Verifique sua conexão e tente novamente.',
+            ctaText: 'Tentar novamente',
+            ctaAction: () => window.location.reload()
+        });
     }
 }
 
@@ -273,58 +262,11 @@ body {
     font-weight: 500;
 }
 
-/* Toast notifications */
-.toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 16px 24px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    font-weight: 500;
-    z-index: 2000;
-    opacity: 0;
-    transform: translateX(400px);
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
-    max-width: 400px;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-success {
-    border-left: 4px solid #22c55e;
-    color: #166534;
-}
-
-.toast-error {
-    border-left: 4px solid #ef4444;
-    color: #991b1b;
-}
-
-.toast-info {
-    border-left: 4px solid #3b82f6;
-    color: #1e40af;
-}
-
 /* Footer fixo */
 footer {
     margin-top: auto !important;
     position: relative;
     z-index: 2;
-}
-
-/* Responsivo mobile */
-@media (max-width: 768px) {
-    .toast {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-        max-width: none;
-    }
 }
 `;
 document.head.appendChild(style);

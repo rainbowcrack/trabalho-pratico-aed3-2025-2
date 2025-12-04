@@ -400,6 +400,8 @@
     <script src="../assets/js/auth/sessionManager.js"></script>
     <script src="../assets/js/auth/router.js"></script>
     <script src="../assets/js/utils/navigation.js"></script>
+    <script src="../assets/js/utils/emptyState.js"></script>
+    <script src="../assets/js/utils/loadingSpinner.js"></script>
     <script>
         // Estado global
         let currentChatId = null;
@@ -414,6 +416,11 @@
             const user = SessionManager.getCurrentUser();
             renderNavbar('meus-chats');
             async function loadChats(userRole, userCpf) {
+                const chatsList = document.getElementById('chatsList');
+                
+                // Mostra loading
+                const hideLoading = LoadingSpinner.show(chatsList, 'chats');
+                
                 try {
                     const listUrl = userRole === 'ADOTANTE'
                         ? `/api/chats?cpfAdotante=${encodeURIComponent(userCpf)}`
@@ -457,29 +464,24 @@
                     });
 
                     if (allChats.length === 0) {
-                        document.getElementById('chatsList').innerHTML = `
-                            <div class="empty-chats-list">
-                                <div class="empty-chats-list-icon">💬</div>
-                                <h3>Nenhuma conversa ainda</h3>
-                                <p>Seus chats aparecerão aqui</p>
-                            </div>
-                        `;
+                        hideLoading();
+                        const chatsList = document.getElementById('chatsList');
+                        EmptyState.render(chatsList, 'chats');
                         document.getElementById('chatsCount').textContent = '0 conversas';
                         return;
                     }
 
+                    hideLoading();
                     renderChatsList();
                     selectChat(allChats[0].threadId);
 
                 } catch (error) {
                     console.error('Erro ao carregar chats:', error);
-                    document.getElementById('chatsList').innerHTML = `
-                        <div class="empty-chats-list">
-                            <div class="empty-chats-list-icon">😞</div>
-                            <h3>Erro ao carregar</h3>
-                            <p>Não conseguimos carregar seus chats</p>
-                        </div>
-                    `;
+                    hideLoading();
+                    const chatsList = document.getElementById('chatsList');
+                    EmptyState.render(chatsList, 'error', {
+                        message: 'Não conseguimos carregar seus chats. Verifique sua conexão e tente novamente.'
+                    });
                     document.getElementById('chatsCount').textContent = '—';
                 }
             }

@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import br.com.mpet.dto.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -344,6 +345,7 @@ public class RestServer {
                         Animal animal = animalOpt.get();
                         if (json.has("nome")) animal.setNome(json.get("nome").getAsString());
                         if (json.has("descricao")) animal.setDescricao(json.get("descricao").getAsString());
+                        if (json.has("imageUrl")) animal.setImageUrl(json.get("imageUrl").getAsString());
                         if (json.has("idOng")) animal.setIdOng(json.get("idOng").getAsInt());
                         
                         animalDao.update(animal);
@@ -424,6 +426,7 @@ public class RestServer {
                     }
                     if (json.has("vacinado")) novo.setVacinado(json.get("vacinado").getAsBoolean()); else novo.setVacinado(false);
                     if (json.has("descricao")) novo.setDescricao(json.get("descricao").getAsString());
+                    if (json.has("imageUrl")) novo.setImageUrl(json.get("imageUrl").getAsString());
                     if (json.has("dataNascimentoAprox")) {
                         try {
                             novo.setDataNascimentoAprox(java.time.LocalDate.parse(json.get("dataNascimentoAprox").getAsString()));
@@ -1065,154 +1068,70 @@ public class RestServer {
     // ============ JSON CONVERTERS ============
 
     private String animalsToJson(List<Animal> animais) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < animais.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append(animalToJson(animais.get(i)));
-        }
-        sb.append("]");
-        return sb.toString();
+        List<AnimalDto> dtos = animais.stream()
+            .map(AnimalDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
 
     private String animalToJson(Animal a) {
-        return "{" +
-            "\"id\":" + a.getId() + "," +
-            "\"idOng\":" + a.getIdOng() + "," +
-            "\"nome\":\"" + escapeJson(a.getNome()) + "\"," +
-            "\"tipo\":\"" + (a instanceof Cachorro ? "CACHORRO" : "GATO") + "\"," +
-            "\"porte\":\"" + a.getPorte() + "\"," +
-            "\"sexo\":\"" + a.getSexo() + "\"," +
-            "\"vacinado\":" + a.isVacinado() + "," +
-            "\"descricao\":\"" + escapeJson(a.getDescricao() != null ? a.getDescricao() : "") + "\"" +
-            "}";
+        AnimalDto dto = AnimalDto.fromEntity(a);
+        return gson.toJson(dto);
     }
 
     private String ongsToJson(List<Ong> ongs) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < ongs.size(); i++) {
-            if (i > 0) sb.append(",");
-            Ong o = ongs.get(i);
-            sb.append("{" +
-                "\"id\":" + o.getId() + "," +
-                "\"nome\":\"" + escapeJson(o.getNome()) + "\"," +
-                "\"cnpj\":\"" + o.getCnpj() + "\"," +
-                "\"endereco\":\"" + escapeJson(o.getEndereco()) + "\"," +
-                "\"telefone\":\"" + o.getTelefone() + "\"," +
-                "\"ativo\":" + o.isAtivo() +
-                "}");
-        }
-        sb.append("]");
-        return sb.toString();
+        List<OngDto> dtos = ongs.stream()
+            .map(OngDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
 
     private String adotanteToJson(Adotante a) {
-        return "{" +
-            "\"cpf\":\"" + a.getCpf() + "\"," +
-            "\"nome\":\"" + escapeJson(a.getNomeCompleto() != null ? a.getNomeCompleto() : "") + "\"," +
-            "\"telefone\":\"" + escapeJson(a.getTelefone() != null ? a.getTelefone() : "") + "\"" +
-            "}";
+        AdotanteDto dto = AdotanteDto.fromEntity(a);
+        return gson.toJson(dto);
     }
 
     private String voluntarioToJson(Voluntario v) {
-        return "{" +
-            "\"cpf\":\"" + v.getCpf() + "\"," +
-            "\"nome\":\"" + escapeJson(v.getNome() != null ? v.getNome() : "") + "\"," +
-            "\"telefone\":\"" + escapeJson(v.getTelefone() != null ? v.getTelefone() : "") + "\"," +
-            "\"idOng\":" + v.getIdOng() + "," +
-            "\"cargo\":\"" + (v.getCargo() != null ? v.getCargo().name() : "ATENDIMENTO") + "\"" +
-            "}";
+        VoluntarioDto dto = VoluntarioDto.fromEntity(v);
+        return gson.toJson(dto);
     }
 
     private String interessesToJson(List<Interesse> interesses) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < interesses.size(); i++) {
-            if (i > 0) sb.append(",");
-            Interesse in = interesses.get(i);
-            sb.append("{" +
-                "\"id\":" + in.getId() + "," +
-                "\"cpfAdotante\":\"" + in.getCpfAdotante() + "\"," +
-                "\"idAnimal\":" + in.getIdAnimal() + "," +
-                "\"status\":\"" + in.getStatus() + "\"" +
-                "}");
-        }
-        sb.append("]");
-        return sb.toString();
+        List<InteresseDto> dtos = interesses.stream()
+            .map(InteresseDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
     
     private String adocoesToJson(List<br.com.mpet.model.Adocao> adocoes) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < adocoes.size(); i++) {
-            if (i > 0) sb.append(",");
-            br.com.mpet.model.Adocao ad = adocoes.get(i);
-            sb.append("{" +
-                "\"id\":" + ad.getId() + "," +
-                "\"cpfAdotante\":\"" + ad.getCpfAdotante() + "\"," +
-                "\"idAnimal\":" + ad.getIdAnimal() + "," +
-                "\"dataAdocao\":\"" + ad.getDataAdocao() + "\"" +
-                "}");
-        }
-        sb.append("]");
-        return sb.toString();
+        List<AdocaoDto> dtos = adocoes.stream()
+            .map(AdocaoDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
 
     private String chatToJson(ChatThread ct) {
-        // Converter LocalDateTime para timestamp (epoch millis) se não for null
-        long timestamp = 0;
-        if (ct.getCriadoEm() != null) {
-            timestamp = ct.getCriadoEm().atZone(java.time.ZoneId.of("America/Sao_Paulo")).toInstant().toEpochMilli();
-        }
-        
-        return "{" +
-            "\"id\":" + ct.getId() + "," +
-            "\"idAnimal\":" + ct.getIdAnimal() + "," +
-            "\"cpfAdotante\":\"" + escapeJson(ct.getCpfAdotante()) + "\"," +
-            "\"aberto\":" + ct.isAberto() + "," +
-            "\"criadoEm\":" + timestamp +
-            "}";
+        ChatThreadDto dto = ChatThreadDto.fromEntity(ct);
+        return gson.toJson(dto);
     }
     
     private String chatsToJson(List<ChatThread> threads) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < threads.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append(chatToJson(threads.get(i)));
-        }
-        sb.append("]");
-        return sb.toString();
+        List<ChatThreadDto> dtos = threads.stream()
+            .map(ChatThreadDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
 
     private String messageToJson(ChatMessage m) {
-        // Converter LocalDateTime para timestamp (epoch millis)
-        long timestamp = 0;
-        if (m.getEnviadoEm() != null) {
-            timestamp = m.getEnviadoEm().atZone(java.time.ZoneId.of("America/Sao_Paulo")).toInstant().toEpochMilli();
-        }
-        
-        return "{" +
-            "\"id\":" + m.getId() + "," +
-            "\"threadId\":" + m.getThreadId() + "," +
-            "\"sender\":\"" + (m.getSender() != null ? m.getSender().name() : "UNKNOWN") + "\"," +
-            "\"conteudo\":\"" + escapeJson(m.getConteudo()) + "\"," +
-            "\"enviadoEm\":" + timestamp +
-            "}";
+        ChatMessageDto dto = ChatMessageDto.fromEntity(m);
+        return gson.toJson(dto);
     }
     
     private String messagesToJson(List<ChatMessage> messages) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < messages.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append(messageToJson(messages.get(i)));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String escapeJson(String str) {
-        if (str == null) return "";
-        return str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r");
+        List<ChatMessageDto> dtos = messages.stream()
+            .map(ChatMessageDto::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+        return gson.toJson(dtos);
     }
 
     // ============ STATIC FILE HANDLER ============

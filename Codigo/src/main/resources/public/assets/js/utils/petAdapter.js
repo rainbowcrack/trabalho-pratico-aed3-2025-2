@@ -225,7 +225,7 @@ const PetAdapter = (function() {
             nome: petBackendData.nome,
             detalhes: formatDetalhes(petBackendData),
             descricao: petBackendData.descricao || 'Sem descrição disponível.',
-            imagem: getImageUrl(petBackendData.tipo, petBackendData.raca, petBackendData.id),
+            imagem: petBackendData.imageUrl || getImageUrl(petBackendData.tipo, petBackendData.raca, petBackendData.id),
             icone: getIcono(petBackendData.tipo),
             tema: getTema(petBackendData.tipo),
             tag: generateTag(petBackendData),
@@ -254,7 +254,7 @@ const PetAdapter = (function() {
             id: petBackendData.id,
             nome: petBackendData.nome,
             tag: generateTag(petBackendData),
-            imagem: getImageUrl(petBackendData.tipo, petBackendData.raca, petBackendData.id),
+            imagem: petBackendData.imageUrl || getImageUrl(petBackendData.tipo, petBackendData.raca, petBackendData.id),
             tipo: getTema(petBackendData.tipo)
         };
     }

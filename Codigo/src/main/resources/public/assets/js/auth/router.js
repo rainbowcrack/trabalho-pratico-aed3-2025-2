@@ -144,8 +144,6 @@ const Router = (function() {
         if (!hasAccess) {
             if (typeof showAlert === 'function') {
                 showAlert('Acesso negado! Você não tem permissão para esta página.', 'error');
-            } else {
-                alert('Acesso negado! Você não tem permissão para esta página.');
             }
             navigateToDefault(user.role);
             return false;
@@ -164,8 +162,6 @@ const Router = (function() {
         } else {
             if (typeof showAlert === 'function') {
                 showAlert('Você não tem permissão para acessar esta página.', 'error');
-            } else {
-                alert('Você não tem permissão para acessar esta página.');
             }
         }
     }

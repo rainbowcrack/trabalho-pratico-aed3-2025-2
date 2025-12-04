@@ -15,6 +15,7 @@ public abstract class Animal {
     Porte porte; // obrigatório
     boolean vacinado; // informações principais: se já foi vacinado
     String descricao; // Condição de saúde (descrição livre, opcional)
+    String imageUrl; // URL da imagem do animal (opcional)
 
   
 
@@ -39,6 +40,8 @@ public abstract class Animal {
     public void setVacinado(boolean vacinado) { this.vacinado = vacinado; }
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
 }

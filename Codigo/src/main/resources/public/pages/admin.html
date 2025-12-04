@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • MPet</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <script defer src="/assets/js/utils/navigation.js"></script>
+  <script defer src="/assets/js/auth/sessionManager.js"></script>
+  <script defer src="/assets/js/utils/emptyState.js"></script>
+  <script defer src="/assets/js/utils/loadingSpinner.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div>
+        <a href="/pages/index.html">MPet</a>
+      </div>
+      <nav class="nav">
+        <a href="/pages/admin.html" class="active">Dashboard</a>
+        <a href="/pages/admin-ongs.html">ONGs</a>
+        <a href="/pages/admin-usuarios.html">Usuários</a>
+        <a href="/pages/admin-animais.html">Animais</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Painel Administrativo</h1>
+    <div class="grid sm-2 md-3">
+      <div class="card">
+        <h3>Resumo</h3>
+        <div id="admin-summary"></div>
+      </div>
+      <div class="card">
+        <h3>Ações rápidas</h3>
+        <div class="table-actions">
+          <a class="btn primary" href="/pages/admin-ongs.html">Cadastrar ONG</a>
+          <a class="btn primary" href="/pages/admin-usuarios.html">Cadastrar Usuário</a>
+          <a class="btn primary" href="/pages/admin-animais.html">Cadastrar Animal</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">MPet • Administração</div>
+  </footer>
+
+  <script>
+    // Proteção de rota ADMIN
+    (async function(){
+      const session = await window.SessionManager?.getSession();
+      if(!session || session.role !== 'ADMIN') {
+        window.showAlert?.('Acesso restrito ao administrador.', 'error');
+        location.href = '/pages/login.html';
+        return;
+      }
+      LoadingSpinner.showPageLoading();
+      try {
+        const [ongs, usuarios, animais] = await Promise.all([
+          fetch('/api/ongs').then(r=>r.json()).catch(()=>[]),
+          fetch('/api/adotantes').then(r=>r.json()).catch(()=>[]),
+          fetch('/api/animais').then(r=>r.json()).catch(()=>[]),
+        ]);
+        document.getElementById('admin-summary').innerHTML = `
+          <ul>
+            <li>ONGs: <strong>${ongs.length}</strong></li>
+            <li>Usuários (adotantes): <strong>${usuarios.length}</strong></li>
+            <li>Animais: <strong>${animais.length}</strong></li>
+          </ul>`;
+      } catch(e) {
+        EmptyState.render('admin-summary', {
+          title: 'Erro ao carregar resumo',
+          description: 'Tente novamente mais tarde.',
+          actionText: 'Recarregar',
+          onAction: ()=>location.reload()
+        });
+      } finally {
+        LoadingSpinner.hidePageLoading();
+      }
+    })();
+  </script>
+</body>
+</html>

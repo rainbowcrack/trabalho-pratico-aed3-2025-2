@@ -355,6 +355,7 @@ public class AnimalDataFileDao extends AnimalDao {
     byte[] porte = Codec.encodeEnum(a.getPorte());
     byte[] vac = Codec.encodeTriBoolean(a.isVacinado());
     byte[] desc = Codec.encodeStringU16(a.getDescricao());
+    byte[] imageUrl = Codec.encodeStringU16(a.getImageUrl());
 
         if (a instanceof Cachorro c) {
             byte[] raca = Codec.encodeStringU16(c.getRaca());
@@ -362,7 +363,7 @@ public class AnimalDataFileDao extends AnimalDao {
             byte[] b1 = Codec.encodeTriBoolean(c.isSeDaBemComCachorros());
             byte[] b2 = Codec.encodeTriBoolean(c.isSeDaBemComGatos());
             byte[] b3 = Codec.encodeTriBoolean(c.isSeDaBemComCriancas());
-            return Codec.concat(idOng, nome, nasc, sexo, porte, vac, desc, raca, nivel, b1, b2, b3);
+            return Codec.concat(idOng, nome, nasc, sexo, porte, vac, desc, imageUrl, raca, nivel, b1, b2, b3);
         } else if (a instanceof Gato g) {
             byte[] raca = Codec.encodeStringU16(g.getRaca());
             byte[] b1 = Codec.encodeTriBoolean(g.isSeDaBemComCachorros());
@@ -370,7 +371,7 @@ public class AnimalDataFileDao extends AnimalDao {
             byte[] b3 = Codec.encodeTriBoolean(g.isSeDaBemComCriancas());
             byte[] b4 = Codec.encodeTriBoolean(g.isAcessoExterior());
             byte[] b5 = Codec.encodeTriBoolean(g.isPossuiTelamento());
-            return Codec.concat(idOng, nome, nasc, sexo, porte, vac, desc, raca, b1, b2, b3, b4, b5);
+            return Codec.concat(idOng, nome, nasc, sexo, porte, vac, desc, imageUrl, raca, b1, b2, b3, b4, b5);
         } else {
             throw new IllegalArgumentException("Tipo de animal não suportado: " + a.getClass());
         }
@@ -385,6 +386,7 @@ public class AnimalDataFileDao extends AnimalDao {
     Codec.Decoded<Porte> dPorte = Codec.decodeEnum(buf, off, Porte.class); off = dPorte.nextOffset;
     Codec.Decoded<Boolean> dVacinado = Codec.decodeTriBoolean(buf, off); off = dVacinado.nextOffset;
     Codec.Decoded<String> dDesc = Codec.decodeStringU16(buf, off); off = dDesc.nextOffset;
+    Codec.Decoded<String> dImageUrl = Codec.decodeStringU16(buf, off); off = dImageUrl.nextOffset;
 
         Codec.Decoded<String> dRaca = Codec.decodeStringU16(buf, off); off = dRaca.nextOffset;
         Codec.Decoded<NivelAdestramento> dNivel = Codec.decodeEnum(buf, off, NivelAdestramento.class); off = dNivel.nextOffset;
@@ -402,6 +404,7 @@ public class AnimalDataFileDao extends AnimalDao {
     c.setPorte(dPorte.value);
     c.setVacinado(Boolean.TRUE.equals(dVacinado.value));
     c.setDescricao(dDesc.value);
+    c.setImageUrl(dImageUrl.value);
 
     c.setRaca(dRaca.value);
     c.setNivelAdestramento(dNivel.value);
@@ -420,6 +423,7 @@ public class AnimalDataFileDao extends AnimalDao {
     Codec.Decoded<Porte> dPorte = Codec.decodeEnum(buf, off, Porte.class); off = dPorte.nextOffset;
     Codec.Decoded<Boolean> dVacinado = Codec.decodeTriBoolean(buf, off); off = dVacinado.nextOffset;
     Codec.Decoded<String> dDesc = Codec.decodeStringU16(buf, off); off = dDesc.nextOffset;
+    Codec.Decoded<String> dImageUrl = Codec.decodeStringU16(buf, off); off = dImageUrl.nextOffset;
 
         Codec.Decoded<String> dRaca = Codec.decodeStringU16(buf, off); off = dRaca.nextOffset;
         Codec.Decoded<Boolean> b1 = Codec.decodeTriBoolean(buf, off); off = b1.nextOffset;
@@ -438,6 +442,7 @@ public class AnimalDataFileDao extends AnimalDao {
     g.setPorte(dPorte.value);
     g.setVacinado(Boolean.TRUE.equals(dVacinado.value));
     g.setDescricao(dDesc.value);
+    g.setImageUrl(dImageUrl.value);
 
     g.setRaca(dRaca.value);
     g.setSeDaBemComCachorros(Boolean.TRUE.equals(b1.value));
@@ -490,6 +495,7 @@ public class AnimalDataFileDao extends AnimalDao {
         to.setSexo(from.getSexo());
         to.setPorte(from.getPorte());
         to.setDescricao(from.getDescricao());
+        to.setImageUrl(from.getImageUrl());
         to.setAtivo(from.isAtivo());
     }
 

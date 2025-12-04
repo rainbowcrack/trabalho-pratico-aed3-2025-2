@@ -21,13 +21,89 @@
 
         <main class="section">
             <div class="container">
-                <h1 class="section-title">Nossa missão</h1>
+                <h1 class="section-title">Sobre o MPet PetMatch</h1>
                 <p class="muted">Conectar pessoas e animais através de uma experiência moderna e acolhedora, incentivando a adoção responsável e apoiando ONGs parceiras.</p>
-                <div class="grid cols-3" style="margin-top: 1rem;">
-                    <div class="card"><strong>Transparência</strong><p class="muted">Dados claros sobre cada pet, histórico e necessidades.</p></div>
-                    <div class="card"><strong>Segurança</strong><p class="muted">Processos que prezam pelo bem-estar dos animais.</p></div>
-                    <div class="card"><strong>Comunidade</strong><p class="muted">Aproximamos adotantes, voluntários e ONGs.</p></div>
+                
+                <div class="grid cols-3" style="margin-top: 2rem;">
+                    <div class="card">
+                        <strong>🐾 Transparência</strong>
+                        <p class="muted">Dados claros sobre cada pet, histórico e necessidades especiais.</p>
+                    </div>
+                    <div class="card">
+                        <strong>🛡️ Segurança</strong>
+                        <p class="muted">Processos rigorosos que prezam pelo bem-estar dos animais.</p>
+                    </div>
+                    <div class="card">
+                        <strong>🤝 Comunidade</strong>
+                        <p class="muted">Aproximamos adotantes, voluntários e ONGs em um só lugar.</p>
+                    </div>
                 </div>
+
+                <section style="margin: 3rem 0;">
+                    <h2>Como funciona</h2>
+                    <div class="grid cols-2" style="margin-top: 1rem;">
+                        <div class="card">
+                            <strong>Para Adotantes</strong>
+                            <ul style="text-align: left;">
+                                <li>📱 Navegue pelos pets disponíveis</li>
+                                <li>❤️ Manifeste interesse pelos que tocar seu coração</li>
+                                <li>💬 Converse diretamente com voluntários</li>
+                                <li>🏠 Complete o processo de adoção</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <strong>Para ONGs</strong>
+                            <ul style="text-align: left;">
+                                <li>📊 Cadastre e gerencie animais</li>
+                                <li>👥 Administre voluntários</li>
+                                <li>💌 Aprove interesses de adoção</li>
+                                <li>📈 Acompanhe estatísticas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section style="margin: 3rem 0;">
+                    <h2>Sistema & Tecnologia</h2>
+                    <div class="card" style="margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <strong>Status da API</strong>
+                            <span id="healthStatus" style="padding: 0.5rem 1rem; border-radius: 20px; background: #f0f0f0;">Verificando...</span>
+                        </div>
+                        <p class="muted">Sistema desenvolvido com persistência customizada em arquivos binários e índices B+Tree para alta performance.</p>
+                    </div>
+                </section>
+
+                <section style="margin: 3rem 0;">
+                    <h2>Links Úteis</h2>
+                    <div class="grid cols-2" style="margin-top: 1rem;">
+                        <div class="card">
+                            <strong>📚 Documentação</strong>
+                            <ul style="text-align: left;">
+                                <li><a href="../mds/API_CRUD_ENDPOINTS.md" target="_blank">API Endpoints</a></li>
+                                <li><a href="../mds/RESUMO_REST_API.md" target="_blank">Guia da API REST</a></li>
+                                <li><a href="../mds/CHAT_SYSTEM.md" target="_blank">Sistema de Chat</a></li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <strong>🚀 Desenvolvimento</strong>
+                            <ul style="text-align: left;">
+                                <li><a href="https://github.com/rainbowcrack/trabalho-pratico-aed3-2025-2" target="_blank">Repositório GitHub</a></li>
+                                <li><a href="../mds/PLANO_EXECUCAO_RESTANTE.md" target="_blank">Roadmap</a></li>
+                                <li><a href="../mds/TESTE_RAPIDO.txt" target="_blank">Guia de Teste</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section style="margin: 3rem 0;">
+                    <h2>Como Contribuir</h2>
+                    <div class="card" style="margin-top: 1rem;">
+                        <p>🎯 <strong>Para ONGs:</strong> Entre em contato para cadastrar sua organização</p>
+                        <p>🧑‍💻 <strong>Para Desenvolvedores:</strong> Contribua no <a href="https://github.com/rainbowcrack/trabalho-pratico-aed3-2025-2" target="_blank">repositório GitHub</a></p>
+                        <p>🐕 <strong>Para Adotantes:</strong> <a href="match.html">Comece a explorar</a> os pets disponíveis!</p>
+                    </div>
+                </section>
             </div>
         </main>
 
@@ -40,5 +116,41 @@
     <script src="../assets/js/auth/sessionManager.js"></script>
     <script src="../assets/js/auth/router.js"></script>
     <script src="../assets/js/utils/navigation.js"></script>
+    
+    <script>
+        // Health widget para a página sobre
+        async function initHealthWidget() {
+            const el = document.getElementById('healthStatus');
+            if (!el) return;
+
+            async function check() {
+                const start = performance.now();
+                try {
+                    const res = await fetch('/api/health', { cache: 'no-store' });
+                    const ms = Math.round(performance.now() - start);
+                    if (res.ok) {
+                        el.textContent = `✅ Online (${ms}ms)`;
+                        el.style.background = '#22c55e';
+                        el.style.color = 'white';
+                    } else {
+                        el.textContent = `❌ Erro ${res.status}`;
+                        el.style.background = '#ef4444';
+                        el.style.color = 'white';
+                    }
+                } catch (e) {
+                    el.textContent = '🔴 Offline';
+                    el.style.background = '#ef4444';
+                    el.style.color = 'white';
+                }
+            }
+
+            // Primeira checagem e agenda repetição
+            check();
+            setInterval(check, 15000);
+        }
+
+        // Inicializa quando a página carrega
+        document.addEventListener('DOMContentLoaded', initHealthWidget);
+    </script>
 </body>
 </html>

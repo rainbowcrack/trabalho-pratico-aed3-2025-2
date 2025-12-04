@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • ONGs</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <script defer src="/assets/js/auth/sessionManager.js"></script>
+  <script defer src="/assets/js/utils/emptyState.js"></script>
+  <script defer src="/assets/js/utils/loadingSpinner.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div>
+        <a href="/pages/admin.html">Admin</a>
+      </div>
+      <nav class="nav">
+        <a href="/pages/admin.html">Dashboard</a>
+        <a href="/pages/admin-ongs.html" class="active">ONGs</a>
+        <a href="/pages/admin-usuarios.html">Usuários</a>
+        <a href="/pages/admin-animais.html">Animais</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Gerenciar ONGs</h1>
+    <div class="table-actions">
+      <button class="btn primary" id="btnNovaOng">Nova ONG</button>
+    </div>
+    <div class="card">
+      <table class="table" id="tabela-ongs">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>CNPJ</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">MPet • Admin ONGs</div>
+  </footer>
+
+  <script>
+    (async function(){
+      const session = await window.SessionManager?.getSession();
+      if(!session || session.role !== 'ADMIN') { showAlert('Acesso restrito.', 'error'); location.href='/pages/login.html'; return; }
+
+      const tbody = document.querySelector('#tabela-ongs tbody');
+      const btnNova = document.getElementById('btnNovaOng');
+
+      async function carregar() {
+        LoadingSpinner.showPageLoading();
+        try {
+          const ongs = await fetch('/api/ongs').then(r=>r.json());
+          tbody.innerHTML = '';
+          if(!ongs.length) {
+            EmptyState.renderInto(tbody, EmptyState.types.ongs || { title: 'Nenhuma ONG', description: 'Cadastre a primeira ONG.' });
+            return;
+          }
+          for(const o of ongs){
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${o.id}</td>
+              <td>${o.nome}</td>
+              <td>${o.cnpj || '-'}</td>
+              <td class="table-actions">
+                <button class="btn" data-edit="${o.id}">Editar</button>
+                <button class="btn danger" data-del="${o.id}">Excluir</button>
+              </td>`;
+            tbody.appendChild(tr);
+          }
+        } catch(e){
+          showAlert('Erro ao carregar ONGs', 'error');
+        } finally {
+          LoadingSpinner.hidePageLoading();
+        }
+      }
+
+      btnNova.addEventListener('click', async ()=>{
+        const nome = prompt('Nome da ONG:');
+        const cnpj = prompt('CNPJ:');
+        if(!nome) return;
+        LoadingSpinner.showButtonLoading(btnNova);
+        try {
+          const res = await fetch('/api/ongs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome, cnpj }) });
+          if(!res.ok) throw new Error('Falha ao criar');
+          showAlert('ONG criada com sucesso', 'success');
+          carregar();
+        } catch(e){ showAlert('Erro ao criar ONG', 'error'); }
+        finally { LoadingSpinner.hideButtonLoading(btnNova); }
+      });
+
+      document.body.addEventListener('click', async (ev)=>{
+        const editId = ev.target.getAttribute('data-edit');
+        const delId = ev.target.getAttribute('data-del');
+        if(editId){
+          const novoNome = prompt('Novo nome:');
+          if(!novoNome) return;
+          const btn = ev.target;
+          LoadingSpinner.showButtonLoading(btn);
+          try {
+            const res = await fetch(`/api/ongs/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome: novoNome }) });
+            if(!res.ok) throw new Error('Falha ao editar');
+            showAlert('ONG editada com sucesso', 'success');
+            carregar();
+          } catch(e){ showAlert('Erro ao editar ONG', 'error'); }
+          finally { LoadingSpinner.hideButtonLoading(btn); }
+        }
+        if(delId){
+          if(!confirm('Confirmar exclusão?')) return;
+          const btn = ev.target;
+          LoadingSpinner.showButtonLoading(btn);
+          try {
+            const res = await fetch(`/api/ongs/${delId}`, { method:'DELETE' });
+            if(!res.ok) throw new Error('Falha ao excluir');
+            showAlert('ONG excluída', 'success');
+            carregar();
+          } catch(e){ showAlert('Erro ao excluir ONG', 'error'); }
+          finally { LoadingSpinner.hideButtonLoading(btn); }
+        }
+      });
+
+      carregar();
+    })();
+  </script>
+</body>
+</html>

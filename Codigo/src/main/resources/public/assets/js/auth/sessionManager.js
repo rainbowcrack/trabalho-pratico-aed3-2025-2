@@ -100,50 +100,16 @@ const SessionManager = (function() {
 
         } catch (error) {
             console.error('Erro ao conectar com API:', error);
+            
+            if (typeof showAlert === 'function') {
+                showAlert('Erro ao conectar ao servidor. Verifique se o backend está rodando em localhost:8080.', 'error');
+            }
+            
             return {
                 success: false,
                 message: 'Erro ao conectar ao servidor. Verifique se o backend está rodando em localhost:8080.'
             };
         }
-
-        // ============ FALLBACK: Se API não responder, usar mock apenas para testes ============
-        // (Comentado - remover se quiser desabilitar fallback)
-        /*
-        const mockUsers = {
-            'admin': { cpf: 'admin', nome: 'Administrador', email: 'admin@mpet.com', role: 'ADMIN', senha: 'admin' },
-            '12345678901': { cpf: '12345678901', nome: 'João Silva', role: 'ADOTANTE', senha: '123' },
-            '11111111111': { cpf: '11111111111', nome: 'Pedro Voluntário', role: 'VOLUNTARIO', senha: '123' }
-        };
-        const mockUser = mockUsers[cleanCpf];
-        if (mockUser && mockUser.senha === senha) {
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(mockUser));
-            return { success: true, message: `Bem-vindo, ${mockUser.nome}!`, user: mockUser };
-        }
-        return { success: false, message: 'CPF ou senha incorretos' };
-        */
-    }
-
-    // ANTIGO CÓDIGO REMOVIDO
-    /*
-        // Cria objeto de sessão (remove senha antes de salvar)
-        const { senha: _, ...userWithoutPassword } = mockUser;
-        const user = {
-            ...userWithoutPassword,
-            loginAt: new Date().toISOString()
-        };
-
-        // Gera token mock (futuro: JWT do backend)
-        const sessionToken = `mock_token_${cleanCpf}_${Date.now()}`;
-
-        // Persiste no localStorage
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-        localStorage.setItem(STORAGE_KEY_SESSION, sessionToken);
-
-        return {
-            success: true,
-            message: 'Login realizado com sucesso!',
-            user: user
-        };
     }
 
     /**
@@ -152,6 +118,10 @@ const SessionManager = (function() {
     function logout() {
         localStorage.removeItem(STORAGE_KEY_USER);
         localStorage.removeItem(STORAGE_KEY_SESSION);
+        
+        if (typeof showAlert === 'function') {
+            showAlert('Logout realizado com sucesso!', 'success');
+        }
     }
 
     /**

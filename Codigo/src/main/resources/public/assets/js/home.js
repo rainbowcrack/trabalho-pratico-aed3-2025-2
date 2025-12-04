@@ -12,6 +12,9 @@ async function fillFeatured() {
   const scroller = document.getElementById('featuredPets');
   if (!scroller) return;
 
+  // Mostra loading
+  const hideLoading = LoadingSpinner.show(scroller, 'pets');
+
   try {
     // Busca pets em destaque do serviço
     const result = await PetService.getFeaturedPets(6);
@@ -19,6 +22,9 @@ async function fillFeatured() {
     if (result.success && result.data.length > 0) {
       // Adapta para mini-cards
       const featuredPets = PetAdapter.adaptMiniList(result.data);
+      
+      // Esconde loading e renderiza cards
+      hideLoading();
       
       // Renderiza cada card
       featuredPets.forEach(pet => {
@@ -32,12 +38,17 @@ async function fillFeatured() {
         scroller.appendChild(el);
       });
     } else {
-      // Fallback: mensagem se não houver pets
-      scroller.innerHTML = '<p style="padding: 20px; text-align: center;">Nenhum pet em destaque no momento.</p>';
+      // Esconde loading e mostra empty state
+      hideLoading();
+      EmptyState.render(scroller, 'featuredPets');
     }
   } catch (error) {
     console.error('Erro ao carregar pets em destaque:', error);
-    scroller.innerHTML = '<p style="padding: 20px; text-align: center;">Erro ao carregar pets.</p>';
+    // Esconde loading e mostra erro
+    hideLoading();
+    EmptyState.render(scroller, 'error', {
+      message: 'Não foi possível carregar os pets em destaque. Verifique sua conexão.'
+    });
   }
 }
 

@@ -129,21 +129,13 @@ footer.site-footer {
 .page-title {
   margin: 8px 0 16px 0;
 
-header {
+/* Scoped site header styles applied via class to avoid global overrides */
+.site-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  background: var(--primary);
-  color: #fff;
-  padding: 1.2rem 2rem;
-  text-align: center;
-  font-size: 2rem;
-  letter-spacing: 2px;
-  font-weight: bold;
-  border-bottom-left-radius: var(--border-radius);
-  border-bottom-right-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  z-index: 50;
 }
 
 nav ul li a {
@@ -297,16 +289,13 @@ nav ul li a:hover::after {
   100% { transform: scale(1); }
 }
 
-footer {
-  background: var(--primary);
-  color: #fff;
-  text-align: center;
-  padding: 1rem;
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
-  margin-top: 2rem;
-  font-size: 1rem;
-  letter-spacing: 1px;
+/* Scoped site footer styles; use .site-footer to prevent unintended overrides */
+.site-footer {
+  margin-top: 40px;
+  padding: 24px 16px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  color: #666;
 }
 
 /* Responsivo */
@@ -335,10 +324,7 @@ footer {
 /* ===================== */
 /* Landing/Hero e seções */
 /* ===================== */
-.container {
-  width: min(1100px, 92%);
-  margin: 0 auto;
-}
+/* Ensure single container rule; width set earlier */
 
 .hero {
   position: relative;

@@ -1,23 +1,38 @@
-SHELL := pwsh.exe -NoLogo -NoProfile -Command
+# Detecta o sistema operacional
+ifeq ($(OS),Windows_NT)
+    # Windows
+    SHELL := pwsh.exe -NoLogo -NoProfile -Command
+    CP_SEP := ;
+else
+    # Linux/Mac
+    SHELL := /bin/bash
+    CP_SEP := :
+endif
 
 .PHONY: build run clean zip run-with-server
 
 build:
-	#mvn wrapper ou mvn normal, ajuste conforme seu ambiente
-	mvn -f Codigo/pom.xml -q -DskipTests package
+	@echo "🔨 Compilando projeto..."
+	@mvn -f Codigo/pom.xml -q -DskipTests package
+	@mvn -f Codigo/pom.xml -q dependency:copy-dependencies -DoutputDirectory=target/lib
+	@echo "✅ Compilação concluída!"
 
 run:
-	# Executa a Interface via classpath de classes compiladas
-	java -cp "Codigo/target/classes" br.com.mpet.Interface
+	@echo "▶️  Iniciando CLI..."
+	@java -cp "Codigo/target/classes$(CP_SEP)Codigo/target/lib/*" br.com.mpet.Interface
 
 run-with-server:
-	# Executa a Interface + REST Server em localhost:8080
-	# O frontend pode ser acessado via http://localhost:8080/pages/index.html
-	java -cp "Codigo/target/classes" br.com.mpet.InterfaceWithServer
+	@echo "🚀 Iniciando servidor REST + CLI..."
+	@echo "🌐 Frontend: http://localhost:8080/pages/index.html"
+	@echo "🔌 API REST: http://localhost:8080/api"
+	@echo ""
+	@java -cp "Codigo/target/classes$(CP_SEP)Codigo/target/lib/*" br.com.mpet.InterfaceWithServer
 
 clean:
-	mvn -f Codigo/pom.xml -q clean
+	@echo "🧹 Limpando arquivos compilados..."
+	@mvn -f Codigo/pom.xml -q clean
+	@echo "✅ Limpeza concluída!"
 
 zip:
-	# Gera backup via a própria Interface (opção 9)
-	java -cp "Codigo/target/classes" br.com.mpet.Interface
+	@echo "📦 Criando backup..."
+	@java -cp "Codigo/target/classes" br.com.mpet.Interface

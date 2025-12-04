@@ -391,8 +391,27 @@
             setLoading(true);
 
             try {
-                // Simula delay de rede
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // ✨ CHAMADA REAL À API REST ✨
+                const response = await fetch('/api/ongs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nome: nomeOng,
+                        cnpj: cnpj,
+                        endereco: endereco,
+                        telefone: telefone
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showAlert(data.error || 'Erro ao registrar ONG. Tente novamente.', 'error');
+                    setLoading(false);
+                    return;
+                }
 
                 showAlert('ONG registrada com sucesso! Redirecionando...', 'success');
 
@@ -401,7 +420,7 @@
                 }, 1500);
             } catch (error) {
                 console.error('Erro ao registrar ONG:', error);
-                showAlert('Erro ao registrar ONG. Tente novamente.', 'error');
+                showAlert('Erro ao conectar com servidor. Verifique se o backend está rodando.', 'error');
                 setLoading(false);
             }
         });

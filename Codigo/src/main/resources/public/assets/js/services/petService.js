@@ -206,22 +206,41 @@ const PetService = (function() {
     /**
      * Busca todos os pets disponíveis para adoção
      * 
-     * MOCK: Retorna MOCK_PETS
-     * FUTURO: GET /api/animais
+     * GET /api/animais
      * 
      * @returns {Promise<{success: boolean, data: Array, message?: string}>}
      */
     async function getAvailablePets() {
-        await simulateNetworkDelay();
-
         try {
-            // Simula busca bem-sucedida
+            const response = await fetch('/api/animais', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
             return {
                 success: true,
-                data: [...MOCK_PETS] // Clone para evitar mutação
+                data: data // Backend já retorna array de animais
             };
         } catch (error) {
             console.error('Erro ao buscar pets:', error);
+            
+            // FALLBACK: Se API não estiver disponível, usa mock
+            if (error.message.includes('fetch')) {
+                console.warn('⚠️  Backend não disponível, usando dados mockados');
+                return {
+                    success: true,
+                    data: [...MOCK_PETS]
+                };
+            }
+            
             return {
                 success: false,
                 data: [],
@@ -233,21 +252,23 @@ const PetService = (function() {
     /**
      * Busca os 6 primeiros pets em destaque
      * 
-     * MOCK: Retorna primeiros 6 do MOCK_PETS
-     * FUTURO: GET /api/animais/featured?limit=6
+     * GET /api/animais (pega primeiros 6)
      * 
      * @param {number} limit - Quantidade de pets (padrão: 6)
      * @returns {Promise<{success: boolean, data: Array, message?: string}>}
      */
     async function getFeaturedPets(limit = 6) {
-        await simulateNetworkDelay();
-
         try {
-            const featured = MOCK_PETS.slice(0, limit);
-            return {
-                success: true,
-                data: featured
-            };
+            const result = await getAvailablePets();
+            
+            if (result.success) {
+                return {
+                    success: true,
+                    data: result.data.slice(0, limit)
+                };
+            }
+            
+            return result;
         } catch (error) {
             console.error('Erro ao buscar pets em destaque:', error);
             return {
@@ -261,23 +282,46 @@ const PetService = (function() {
     /**
      * Busca um pet específico por ID
      * 
-     * MOCK: Busca no MOCK_PETS
-     * FUTURO: GET /api/animais/{id}
+     * GET /api/animais/{id}
      * 
      * @param {number} id - ID do animal
      * @returns {Promise<{success: boolean, data?: object, message?: string}>}
      */
     async function getPetById(id) {
-        await simulateNetworkDelay();
+        try {
+            const response = await fetch(`/api/animais/${id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const pet = MOCK_PETS.find(p => p.id === id);
-        
-        if (pet) {
+            if (!response.ok) {
+                if (response.status === 404) {
+                    return {
+                        success: false,
+                        message: `Pet com ID ${id} não encontrado.`
+                    };
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            
             return {
                 success: true,
-                data: pet
+                data: data
             };
-        } else {
+        } catch (error) {
+            console.error('Erro ao buscar pet:', error);
+            
+            // FALLBACK: tenta buscar no mock
+            const pet = MOCK_PETS.find(p => p.id === id);
+            if (pet) {
+                console.warn('⚠️  Usando dados mockados');
+                return { success: true, data: pet };
+            }
+            
             return {
                 success: false,
                 message: `Pet com ID ${id} não encontrado.`
@@ -288,8 +332,7 @@ const PetService = (function() {
     /**
      * Registra interesse de adoção
      * 
-     * MOCK: Adiciona em MOCK_INTERESSES
-     * FUTURO: POST /api/interesses
+     * POST /api/interesses
      * Body: { cpfAdotante: string, idAnimal: number }
      * 
      * @param {string} cpf - CPF do adotante
@@ -297,8 +340,6 @@ const PetService = (function() {
      * @returns {Promise<{success: boolean, data?: object, message: string}>}
      */
     async function registerInterest(cpf, animalId) {
-        await simulateNetworkDelay();
-
         // Validações
         if (!isValidCpf(cpf)) {
             return {
@@ -314,43 +355,52 @@ const PetService = (function() {
             };
         }
 
-        // Verifica se animal existe
-        const pet = MOCK_PETS.find(p => p.id === animalId);
-        if (!pet) {
+        try {
+            const response = await fetch('/api/interesses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cpfAdotante: cpf,
+                    idAnimal: animalId
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    message: data.error || 'Erro ao registrar interesse'
+                };
+            }
+
             return {
-                success: false,
-                message: `Animal com ID ${animalId} não existe.`
+                success: true,
+                data: data,
+                message: data.message || 'Interesse registrado com sucesso! 🎉'
+            };
+        } catch (error) {
+            console.error('Erro ao registrar interesse:', error);
+            
+            // FALLBACK: simula registro local
+            console.warn('⚠️  Backend não disponível, simulando registro');
+            const novoInteresse = {
+                id: generateId(),
+                cpfAdotante: cpf,
+                idAnimal: animalId,
+                status: 'PENDENTE',
+                dataRegistro: new Date().toISOString()
+            };
+            MOCK_INTERESSES.push(novoInteresse);
+            
+            return {
+                success: true,
+                data: novoInteresse,
+                message: 'Interesse registrado localmente! 🎉'
             };
         }
-
-        // Verifica duplicata
-        const existente = MOCK_INTERESSES.find(
-            i => i.cpfAdotante === cpf && i.idAnimal === animalId
-        );
-        
-        if (existente) {
-            return {
-                success: false,
-                message: `Você já manifestou interesse por ${pet.nome}.`
-            };
-        }
-
-        // Cria novo interesse
-        const novoInteresse = {
-            id: generateId(),
-            cpfAdotante: cpf,
-            idAnimal: animalId,
-            status: 'PENDENTE',
-            dataRegistro: new Date().toISOString()
-        };
-
-        MOCK_INTERESSES.push(novoInteresse);
-
-        return {
-            success: true,
-            data: novoInteresse,
-            message: `Interesse por ${pet.nome} registrado com sucesso! 🎉`
-        };
     }
 
     /**
@@ -421,6 +471,71 @@ const PetService = (function() {
         };
     }
 
+    /**
+     * Busca matches (interesses + adoções) de um adotante
+     * 
+     * API REAL: GET /api/adotantes/{cpf}/interesses e /api/adotantes/{cpf}/adocoes
+     * 
+     * @param {string} cpfAdotante - CPF do adotante
+     * @returns {Promise<{success: boolean, data: Array}>}
+     */
+    async function getMyMatches(cpfAdotante) {
+        try {
+            const API_BASE = 'http://localhost:8080';
+            
+            // Buscar interesses
+            const interessesResponse = await fetch(`${API_BASE}/api/adotantes/${cpfAdotante}/interesses`);
+            if (!interessesResponse.ok) {
+                throw new Error('Erro ao buscar interesses');
+            }
+            const interesses = await interessesResponse.json();
+            
+            // Buscar adoções
+            const adocoesResponse = await fetch(`${API_BASE}/api/adotantes/${cpfAdotante}/adocoes`);
+            if (!adocoesResponse.ok) {
+                throw new Error('Erro ao buscar adoções');
+            }
+            const adocoes = await adocoesResponse.json();
+            
+            // Buscar detalhes dos animais
+            const animaisResponse = await fetch(`${API_BASE}/api/animais`);
+            if (!animaisResponse.ok) {
+                throw new Error('Erro ao buscar animais');
+            }
+            const animais = await animaisResponse.json();
+            
+            // Mapear interesses com dados dos animais
+            const matches = interesses.map(interesse => {
+                const animal = animais.find(a => a.id === interesse.idAnimal);
+                if (!animal) return null;
+                
+                // Verificar se foi adotado
+                const adocao = adocoes.find(ad => ad.idAnimal === interesse.idAnimal);
+                
+                return {
+                    interesseId: interesse.id,
+                    animal: animal,
+                    status: adocao ? 'ADOTADO' : interesse.status,
+                    dataInteresse: interesse.dataInteresse,
+                    dataAdocao: adocao ? adocao.dataAdocao : null
+                };
+            }).filter(m => m !== null);
+            
+            return {
+                success: true,
+                data: matches
+            };
+            
+        } catch (error) {
+            console.error('Erro ao buscar matches:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
     // API pública
     return {
         getAvailablePets,
@@ -428,6 +543,7 @@ const PetService = (function() {
         getPetById,
         registerInterest,
         getInteressesByCpf,
+        getMyMatches,
         searchPets
     };
 })();

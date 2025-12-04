@@ -135,16 +135,21 @@ function showAlert(message, type = 'info') {
 }
 
 /**
- * Carrega ONGs disponíveis (mock para agora)
+ * Carrega ONGs disponíveis (API real)
+ * Fallback: exibe alerta de erro, sem mocks em produção
  */
 async function loadONGs() {
-    // FUTURO: Buscar via API /api/ongs
-    // MOCK: Retorna ONGs de teste
-    return [
-        { id: 1, nome: 'Patinhas Felizes', cnpj: '12.345.678/0001-00', endereco: 'São Paulo, SP' },
-        { id: 2, nome: 'Resgate Animal RJ', cnpj: '23.456.789/0001-11', endereco: 'Rio de Janeiro, RJ' },
-        { id: 3, nome: 'Patas e Amor', cnpj: '34.567.890/0001-22', endereco: 'Belo Horizonte, MG' },
-    ];
+    try {
+        const res = await fetch('/api/ongs', { headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        if (typeof showAlert === 'function') {
+            showAlert('Erro ao carregar ONGs. Verifique se a API está ativa.', 'error');
+        }
+        return [];
+    }
 }
 
 /**

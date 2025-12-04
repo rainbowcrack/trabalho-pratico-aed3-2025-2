@@ -142,7 +142,11 @@ const Router = (function() {
         // Verifica permissão
         const hasAccess = canAccess(normalizedPath);
         if (!hasAccess) {
-            alert('Acesso negado! Você não tem permissão para esta página.');
+            if (typeof showAlert === 'function') {
+                showAlert('Acesso negado! Você não tem permissão para esta página.', 'error');
+            } else {
+                alert('Acesso negado! Você não tem permissão para esta página.');
+            }
             navigateToDefault(user.role);
             return false;
         }
@@ -158,7 +162,11 @@ const Router = (function() {
         if (canAccess(path)) {
             window.location.href = path;
         } else {
-            alert('Você não tem permissão para acessar esta página.');
+            if (typeof showAlert === 'function') {
+                showAlert('Você não tem permissão para acessar esta página.', 'error');
+            } else {
+                alert('Você não tem permissão para acessar esta página.');
+            }
         }
     }
 

@@ -57,4 +57,36 @@ window.addEventListener('resize', handleReveal);
 document.addEventListener('DOMContentLoaded', () => {
   fillFeatured();
   handleReveal();
+  // Inicia checagem de saúde da API na home
+  initHealthWidget();
 });
+
+/**
+ * Health widget: checa /api/health periodicamente e atualiza indicador na home
+ */
+async function initHealthWidget() {
+  const el = document.getElementById('healthStatus');
+  if (!el) return;
+
+  async function check() {
+    const start = performance.now();
+    try {
+      const res = await fetch('/api/health', { cache: 'no-store' });
+      const ms = Math.round(performance.now() - start);
+      if (res.ok) {
+        el.textContent = `API: online (${ms}ms)`;
+        el.style.color = '#22c55e'; // verde
+      } else {
+        el.textContent = `API: erro ${res.status}`;
+        el.style.color = '#ef4444'; // vermelho
+      }
+    } catch (e) {
+      el.textContent = 'API: offline';
+      el.style.color = '#ef4444';
+    }
+  }
+
+  // Primeira checagem imediata e agenda a cada 15s
+  check();
+  setInterval(check, 15000);
+}

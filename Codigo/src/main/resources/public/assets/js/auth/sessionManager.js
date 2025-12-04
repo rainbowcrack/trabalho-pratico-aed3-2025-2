@@ -250,9 +250,9 @@ const SessionManager = (function() {
 
         // Senão, redireciona para página padrão do papel
         const defaultPages = {
-            'ADMIN': 'admin/dashboard.html',
+            'ADMIN': 'index.html', // Admin vai para home (TODO: criar dashboard)
             'ADOTANTE': 'match.html', // MATCH é o principal! (já está em /pages/)
-            'VOLUNTARIO': 'voluntario/dashboard.html'
+            'VOLUNTARIO': 'index.html' // Voluntário vai para home (TODO: criar dashboard)
         };
 
         const defaultPage = defaultPages[user.role] || '../index.html';

@@ -623,7 +623,19 @@
         async function loadONGs() {
             const select = document.getElementById('ongSelect');
             try {
-                const ongs = await loadONGs();
+                const response = await fetch('/api/ongs', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar ONGs');
+                }
+
+                const ongs = await response.json();
+                
                 select.innerHTML = '<option value="">Selecione...</option>';
                 ongs.forEach(ong => {
                     const option = document.createElement('option');
@@ -715,14 +727,36 @@
             setLoadingAdotante(true);
 
             try {
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // ✨ CHAMADA REAL À API REST ✨
+                const response = await fetch('/api/adotantes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cpf: cpf,
+                        senha: senha,
+                        nomeCompleto: nomeCompleto,
+                        telefone: document.getElementById('telefoneAdotante').value,
+                        dataNascimento: document.getElementById('dataNascimentoAdotante').value || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showAlert(data.error || 'Erro ao criar conta. Tente novamente.', 'error');
+                    setLoadingAdotante(false);
+                    return;
+                }
+
                 showAlert('Conta de adotante criada com sucesso! Redirecionando...', 'success');
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 1500);
             } catch (error) {
                 console.error('Erro:', error);
-                showAlert('Erro ao criar conta. Tente novamente.', 'error');
+                showAlert('Erro ao conectar com servidor. Verifique se o backend está rodando.', 'error');
                 setLoadingAdotante(false);
             }
         });
@@ -775,14 +809,38 @@
             setLoadingVoluntario(true);
 
             try {
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // ✨ CHAMADA REAL À API REST ✨
+                const response = await fetch('/api/voluntarios', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cpf: cpf,
+                        senha: senha,
+                        nome: nome,
+                        idOng: parseInt(idOng),
+                        telefone: document.getElementById('telefoneVoluntario').value,
+                        endereco: document.getElementById('endereco').value,
+                        cargo: document.getElementById('cargo').value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showAlert(data.error || 'Erro ao criar conta. Tente novamente.', 'error');
+                    setLoadingVoluntario(false);
+                    return;
+                }
+
                 showAlert('Conta de voluntário criada com sucesso! Redirecionando...', 'success');
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 1500);
             } catch (error) {
                 console.error('Erro:', error);
-                showAlert('Erro ao criar conta. Tente novamente.', 'error');
+                showAlert('Erro ao conectar com servidor. Verifique se o backend está rodando.', 'error');
                 setLoadingVoluntario(false);
             }
         });

@@ -358,7 +358,10 @@
                             <h2 id="chatCurrentName">Chat</h2>
                             <p id="chatCurrentOng">ONG - Voluntário</p>
                         </div>
-                        <button class="chat-header-btn" onclick="openAnimalProfile()">👁️</button>
+                        <div>
+                            <button class="chat-header-btn" onclick="openAnimalProfile()" title="Ver perfil do animal">👁️</button>
+                            <button class="chat-header-btn" id="closeBtn" onclick="closeThread()" title="Fechar conversa">🔒</button>
+                        </div>
                     </div>
 
                     <div class="chat-messages" id="messagesList">
@@ -410,97 +413,77 @@
 
             const user = SessionManager.getCurrentUser();
             renderNavbar('meus-chats');
-            loadChats(user.role, user.cpf);
-        }
+            async function loadChats(userRole, userCpf) {
+                try {
+                    const listUrl = userRole === 'ADOTANTE'
+                        ? `/api/chats?cpfAdotante=${encodeURIComponent(userCpf)}`
+                        : `/api/chats`;
 
-        /**
-         * Carrega lista de chats do usuário
-         */
-        async function loadChats(userRole, userCpf) {
-            try {
-                // FUTURO: Buscar via API /api/chats
-                // MOCK: Simula chats do usuário
-                allChats = [
-                    {
-                        threadId: 1,
-                        animalName: 'Luna',
-                        animalIcon: '🐕',
-                        volunteerName: 'Pedro Voluntário',
-                        ongName: 'Patinhas Felizes',
-                        lastMessage: 'Ótimo! Luna está pronta para conhecer você!',
-                        lastTime: '14:32',
-                        unread: 2,
-                        messages: [
-                            {
-                                id: 1,
-                                sender: 'VOLUNTARIO',
-                                content: 'Olá! Tudo bem com você?',
-                                timestamp: '10:15'
-                            },
-                            {
-                                id: 2,
-                                sender: 'ADOTANTE',
-                                content: 'Oi! Tudo certo! Queria saber mais sobre a Luna',
-                                timestamp: '10:20'
-                            },
-                            {
-                                id: 3,
-                                sender: 'VOLUNTARIO',
-                                content: 'Ótimo! Luna está pronta para conhecer você!',
-                                timestamp: '14:32'
-                            }
-                        ]
-                    },
-                    {
-                        threadId: 2,
-                        animalName: 'Miau',
-                        animalIcon: '🐱',
-                        volunteerName: 'Ana Voluntária',
-                        ongName: 'Resgate Animal RJ',
-                        lastMessage: 'Você pode vir conhecê-lo amanhã?',
-                        lastTime: '09:45',
-                        unread: 0,
-                        messages: [
-                            {
-                                id: 1,
-                                sender: 'ADOTANTE',
-                                content: 'Olá! Tenho interesse no Miau',
-                                timestamp: '09:00'
-                            },
-                            {
-                                id: 2,
-                                sender: 'VOLUNTARIO',
-                                content: 'Ótimo! Você pode vir conhecê-lo amanhã?',
-                                timestamp: '09:45'
-                            }
-                        ]
+                    const [threadsRes, animalsRes] = await Promise.all([
+                        fetch(listUrl),
+                        fetch('/api/animais')
+                    ]);
+
+                    if (!threadsRes.ok) throw new Error('Falha ao carregar chats');
+                    if (!animalsRes.ok) throw new Error('Falha ao carregar animais');
+
+                    let threads = await threadsRes.json();
+                    const animals = await animalsRes.json();
+                    const animalsById = new Map(animals.map(a => [a.id, a]));
+
+                    // Se voluntário, exibir apenas threads dos animais da sua ONG
+                    if (userRole === 'VOLUNTARIO') {
+                        const currentUser = SessionManager.getCurrentUser();
+                        const allowedIds = new Set(animals.filter(a => a.idOng === currentUser?.idOng).map(a => a.id));
+                        threads = threads.filter(t => allowedIds.has(t.idAnimal));
                     }
-                ];
 
-                if (allChats.length === 0) {
+                    allChats = threads.map(t => {
+                        const a = animalsById.get(t.idAnimal) || { nome: `Animal ${t.idAnimal}`, tipo: 'CACHORRO' };
+                        const icon = a.tipo === 'GATO' ? '🐱' : '🐕';
+                        return {
+                            threadId: t.id,
+                            idAnimal: t.idAnimal,
+                                animalName: a.nome,
+                                aberto: t.aberto === true,
+                            animalIcon: icon,
+                            volunteerName: 'Voluntários da ONG',
+                            ongName: 'Chat do MPet',
+                            lastMessage: 'Clique para abrir a conversa',
+                            lastTime: '',
+                            unread: 0,
+                            messages: []
+                        }
+                    });
+
+                    if (allChats.length === 0) {
+                        document.getElementById('chatsList').innerHTML = `
+                            <div class="empty-chats-list">
+                                <div class="empty-chats-list-icon">💬</div>
+                                <h3>Nenhuma conversa ainda</h3>
+                                <p>Seus chats aparecerão aqui</p>
+                            </div>
+                        `;
+                        document.getElementById('chatsCount').textContent = '0 conversas';
+                        return;
+                    }
+
+                    renderChatsList();
+                    selectChat(allChats[0].threadId);
+
+                } catch (error) {
+                    console.error('Erro ao carregar chats:', error);
                     document.getElementById('chatsList').innerHTML = `
                         <div class="empty-chats-list">
-                            <div class="empty-chats-list-icon">💬</div>
-                            <h3>Nenhuma conversa ainda</h3>
-                            <p>Seus chats aparecerão aqui</p>
+                            <div class="empty-chats-list-icon">😞</div>
+                            <h3>Erro ao carregar</h3>
+                            <p>Não conseguimos carregar seus chats</p>
                         </div>
                     `;
-                    return;
+                    document.getElementById('chatsCount').textContent = '—';
                 }
-
-                renderChatsList();
-                selectChat(allChats[0].threadId);
-
-            } catch (error) {
-                console.error('Erro ao carregar chats:', error);
-                document.getElementById('chatsList').innerHTML = `
-                    <div class="empty-chats-list">
-                        <div class="empty-chats-list-icon">😞</div>
-                        <h3>Erro ao carregar</h3>
-                        <p>Não conseguimos carregar seus chats</p>
-                    </div>
-                `;
             }
+            loadChats(user.role, SessionManager.getCurrentCpf());
         }
 
         /**
@@ -535,12 +518,15 @@
         /**
          * Seleciona um chat
          */
-        function selectChat(threadId) {
+        async function selectChat(threadId) {
             currentChatId = threadId;
 
             // Atualiza UI
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            event.currentTarget?.classList.add('active');
+            // Seleciona o item correspondente pela posição
+            const container = document.getElementById('chatsList');
+            const idx = allChats.findIndex(c => c.threadId === threadId);
+            if (idx >= 0 && container.children[idx]) container.children[idx].classList.add('active');
 
             const chat = allChats.find(c => c.threadId === threadId);
             if (!chat) return;
@@ -548,7 +534,28 @@
             document.getElementById('chatCurrentName').textContent = `${chat.animalIcon} ${chat.animalName}`;
             document.getElementById('chatCurrentOng').textContent = `${chat.ongName} - ${chat.volunteerName}`;
 
+            // Busca mensagens reais da thread
+            try {
+                const res = await fetch(`/api/chats/${threadId}/messages`);
+                if (!res.ok) throw new Error('Falha ao carregar mensagens');
+                const msgs = await res.json();
+                chat.messages = msgs.map(m => ({
+                    id: m.id,
+                    sender: m.sender,
+                    content: m.conteudo,
+                    timestamp: formatTime(m.enviadoEm)
+                }));
+            } catch (e) {
+                console.error('Erro ao carregar mensagens:', e);
+                chat.messages = [];
+            }
+
             renderMessages(chat.messages);
+
+            // Habilita/desabilita input conforme status da thread
+            setChatInputEnabled(chat.aberto === true);
+            document.getElementById('closeBtn').style.opacity = chat.aberto ? '1' : '0.5';
+            document.getElementById('closeBtn').disabled = !chat.aberto;
 
             document.getElementById('chatSelected').style.display = 'flex';
             document.getElementById('chatEmpty').style.display = 'none';
@@ -585,47 +592,28 @@
         /**
          * Envia mensagem
          */
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
 
             if (!message) return;
-
-            // Simula envio
-            const chat = allChats.find(c => c.threadId === currentChatId);
-            if (chat) {
-                const now = new Date();
-                const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-                chat.messages.push({
-                    id: chat.messages.length + 1,
-                    sender: 'ADOTANTE',
-                    content: message,
-                    timestamp: time
+            try {
+                const user = SessionManager.getCurrentUser();
+                const payload = {
+                    threadId: currentChatId,
+                    sender: user?.role === 'VOLUNTARIO' ? 'VOLUNTARIO' : 'ADOTANTE',
+                    conteudo: message
+                };
+                const res = await fetch('/api/chat-messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-
-                renderMessages(chat.messages);
+                if (!res.ok) throw new Error('Falha ao enviar mensagem');
+                await selectChat(currentChatId);
                 input.value = '';
-
-                // Scroll para final
-                setTimeout(() => {
-                    const messagesList = document.getElementById('messagesList');
-                    messagesList.scrollTop = messagesList.scrollHeight;
-                }, 50);
-
-                // Simula resposta automática (FUTURO: remover quando integrar com backend)
-                setTimeout(() => {
-                    chat.messages.push({
-                        id: chat.messages.length + 1,
-                        sender: 'VOLUNTARIO',
-                        content: 'Obrigado pela mensagem! Vou verificar e retorno em breve.',
-                        timestamp: time
-                    });
-
-                    renderMessages(chat.messages);
-                    const messagesList = document.getElementById('messagesList');
-                    messagesList.scrollTop = messagesList.scrollHeight;
-                }, 1500);
+            } catch (e) {
+                console.error('Erro ao enviar mensagem:', e);
             }
         }
 
@@ -636,8 +624,42 @@
             if (currentChatId) {
                 const chat = allChats.find(c => c.threadId === currentChatId);
                 if (chat) {
-                    window.location.href = `meus-matches.html#${chat.animalName}`;
+                    window.location.href = `meus-matches.html#animal-${chat.idAnimal}`;
                 }
+            }
+        }
+
+        function formatTime(epochMillis) {
+            if (!epochMillis || epochMillis <= 0) return '';
+            const d = new Date(epochMillis);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+
+        function setChatInputEnabled(enabled) {
+            const input = document.getElementById('messageInput');
+            const btn = document.getElementById('sendBtn');
+            input.disabled = !enabled;
+            btn.disabled = !enabled;
+        }
+
+        async function closeThread() {
+            if (!currentChatId) return;
+            try {
+                const res = await fetch(`/api/chats/${currentChatId}/close`, { method: 'PUT' });
+                if (!res.ok) throw new Error('Falha ao fechar conversa');
+                const chat = allChats.find(c => c.threadId === currentChatId);
+                if (chat) {
+                    chat.aberto = false;
+                    setChatInputEnabled(false);
+                    document.getElementById('closeBtn').style.opacity = '0.5';
+                    document.getElementById('closeBtn').disabled = true;
+                    // Indica no cabeçalho
+                    document.getElementById('chatCurrentOng').textContent = `${chat.ongName} - ${chat.volunteerName} (fechado)`;
+                }
+            } catch (e) {
+                console.error('Erro ao fechar conversa:', e);
             }
         }
 

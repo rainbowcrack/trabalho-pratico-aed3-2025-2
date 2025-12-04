@@ -295,49 +295,25 @@
          */
         async function loadMyMatches(userCpf) {
             const content = document.getElementById('matchesContent');
+            
+            // Loading state
+            content.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <h2>Carregando seus matches...</h2>
+                </div>
+            `;
 
             try {
-                // FUTURO: Buscar via API /api/adotantes/{cpf}/favoritos
-                // MOCK: Simula dados do usuário logado
-                const mockMatches = [
-                    {
-                        id: 1,
-                        nome: 'Luna',
-                        icone: '🐕',
-                        imagem: 'https://images.unsplash.com/photo-1633722715463-d30628cfe590?w=400&h=300&fit=crop',
-                        detalhes: '2 anos • Médio',
-                        descricao: 'Cadela dócil e carinhosa, adora brincar. Perfeita para famílias com crianças.',
-                        ong: 'Patinhas Felizes',
-                        status: 'PENDENTE'
-                    },
-                    {
-                        id: 2,
-                        nome: 'Miau',
-                        icone: '🐱',
-                        imagem: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop',
-                        detalhes: '1 ano • Pequeno',
-                        descricao: 'Gato tímido mas muito afetuoso. Gosta de sun bathing.',
-                        ong: 'Resgate Animal RJ',
-                        status: 'APROVADO'
-                    },
-                    {
-                        id: 3,
-                        nome: 'Max',
-                        icone: '🐕',
-                        imagem: 'https://images.unsplash.com/photo-1552053831-71594a27c62d?w=400&h=300&fit=crop',
-                        detalhes: '3 anos • Grande',
-                        descricao: 'Pastor Alemão bem treinado, protetor e leal.',
-                        ong: 'Patas e Amor',
-                        status: 'PENDENTE'
-                    }
-                ];
-
-                if (mockMatches.length === 0) {
+                // Buscar matches reais via API
+                const result = await PetService.getMyMatches(userCpf);
+                
+                if (!result.success || result.data.length === 0) {
                     content.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">🔍</div>
-                            <h2>Você ainda não tem favoritos</h2>
-                            <p>Explore nossos animais disponíveis e salve os que mais gostou!</p>
+                            <h2>Você ainda não tem matches</h2>
+                            <p>Explore nossos animais disponíveis e demonstre interesse nos que mais gostou!</p>
                             <a href="match.html" class="empty-state-btn">Explorar Animais</a>
                         </div>
                     `;
@@ -347,7 +323,7 @@
                 const grid = document.createElement('div');
                 grid.className = 'matches-grid';
 
-                mockMatches.forEach(match => {
+                result.data.forEach(match => {
                     const card = createMatchCard(match);
                     grid.appendChild(card);
                 });
@@ -361,45 +337,85 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">😞</div>
                         <h2>Erro ao carregar</h2>
-                        <p>Não conseguimos carregar seus favoritos. Tente novamente.</p>
-                        <a href="match.html" class="empty-state-btn">Voltar para Matches</a>
+                        <p>Não conseguimos carregar seus matches. Tente novamente.</p>
+                        <button class="empty-state-btn" onclick="location.reload()">Tentar Novamente</button>
                     </div>
                 `;
             }
         }
 
         /**
-         * Cria card de match
+         * Cria card de match com dados reais da API
          */
         function createMatchCard(match) {
             const card = document.createElement('div');
             card.className = 'match-card';
-
-            const statusColor = match.status === 'APROVADO' ? 'adopted' : 'pending';
-            const statusText = match.status === 'APROVADO' ? '✅ Aprovado' : '⏳ Pendente';
+            
+            const animal = match.animal;
+            
+            // Determinar ícone do tipo
+            const icone = animal.tipo === 'CACHORRO' ? '🐕' : '🐱';
+            
+            // Calcular idade aproximada
+            let idade = 'Idade desconhecida';
+            if (animal.dataNascimentoAprox) {
+                const nascimento = new Date(animal.dataNascimentoAprox);
+                const hoje = new Date();
+                const anos = Math.floor((hoje - nascimento) / (365.25 * 24 * 60 * 60 * 1000));
+                idade = anos === 0 ? 'Menos de 1 ano' : `${anos} ano${anos > 1 ? 's' : ''}`;
+            }
+            
+            // Mapear porte
+            const porteMap = {
+                'PEQUENO': 'Pequeno',
+                'MEDIO': 'Médio',
+                'GRANDE': 'Grande'
+            };
+            const porte = porteMap[animal.porte] || animal.porte;
+            
+            // Mapear status
+            const statusMap = {
+                'PENDENTE': { text: '⏳ Pendente', class: 'pending' },
+                'APROVADO': { text: '✅ Aprovado', class: 'adopted' },
+                'RECUSADO': { text: '❌ Recusado', class: 'pending' },
+                'ADOTADO': { text: '🎉 Adotado', class: 'adopted' }
+            };
+            const status = statusMap[match.status] || { text: match.status, class: 'pending' };
+            
+            // Imagem placeholder baseada no tipo
+            const imageUrl = animal.tipo === 'CACHORRO' 
+                ? 'https://images.unsplash.com/photo-1633722715463-d30628cfe590?w=400&h=300&fit=crop'
+                : 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop';
 
             card.innerHTML = `
                 <div class="match-card-image-wrapper">
-                    <img class="match-card-image" src="${match.imagem}" alt="${match.nome}">
+                    <img class="match-card-image" src="${imageUrl}" alt="${animal.nome}">
                     <div class="badge-favorite">❤️</div>
                 </div>
                 <div class="match-card-body">
-                    <h3 class="match-card-name">${match.icone} ${match.nome}</h3>
+                    <h3 class="match-card-name">${icone} ${animal.nome}</h3>
                     <div class="match-card-details">
                         <div class="match-card-detail-item">
-                            <span>${match.detalhes}</span>
+                            <span>${idade} • ${porte}</span>
                         </div>
+                        ${animal.vacinado ? '<div class="match-card-detail-item">💉 Vacinado</div>' : ''}
                     </div>
-                    <p class="match-card-description">${match.descricao}</p>
+                    <p class="match-card-description">${animal.descricao || 'Sem descrição disponível.'}</p>
                     <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">
-                        ${match.ong}
+                        ${animal.raca || 'SRD'}
                     </div>
-                    <div class="match-status ${statusColor}">${statusText}</div>
+                    <div class="match-status ${status.class}">${status.text}</div>
                     <div class="match-card-footer">
-                        <button class="match-card-btn match-card-btn-primary" onclick="goToChat('${match.id}')">
-                            💬 Conversar
-                        </button>
-                        <button class="match-card-btn match-card-btn-secondary" onclick="viewProfile('${match.id}')">
+                        ${match.status === 'APROVADO' || match.status === 'ADOTADO' ? `
+                            <button class="match-card-btn match-card-btn-primary" onclick="goToChat(${animal.id})">
+                                💬 Conversar
+                            </button>
+                        ` : `
+                            <button class="match-card-btn match-card-btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                💬 Aguardando Aprovação
+                            </button>
+                        `}
+                        <button class="match-card-btn match-card-btn-secondary" onclick="viewAnimal(${animal.id})">
                             👁️ Ver Perfil
                         </button>
                     </div>
@@ -419,7 +435,7 @@
         /**
          * View profile do animal
          */
-        function viewProfile(animalId) {
+        function viewAnimal(animalId) {
             window.location.href = `match.html#animal-${animalId}`;
         }
 

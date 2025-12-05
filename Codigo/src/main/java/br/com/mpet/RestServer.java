@@ -56,6 +56,18 @@ import br.com.mpet.persistence.dao.VoluntarioDataFileDao;
  * - E muito mais...
  */
 public class RestServer {
+    
+    // --- Cores ANSI para Logs HTTP ---
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+    public static final String ANSI_DIM = "\u001B[2m";
+    public static final String ANSI_BOLD = "\u001B[1m";
     private HttpServer server;
     private int port;
     private AnimalDataFileDao animalDao;
@@ -171,12 +183,17 @@ public class RestServer {
                 String path = exchange.getRequestURI().getPath();
                 String query = exchange.getRequestURI().getQuery();
                 String ua = exchange.getRequestHeaders().getFirst("User-Agent");
-                System.out.printf("[HTTP ►] %s %s%s  ua=%s  ctx=%s%n",
-                        method,
-                        path,
-                        (query != null ? ("?" + query) : ""),
-                        (ua != null ? ua : "-"),
-                        name);
+                
+                // Log colorido da requisição
+                String icon = getRequestIcon(path, method);
+                String color = getRequestColor(path, method);
+                String pathDisplay = path + (query != null ? ("?" + query) : "");
+                String uaShort = ua != null ? (ua.length() > 40 ? ua.substring(0, 37) + "..." : ua) : "-";
+                
+                System.out.printf("%s[HTTP %s] %s %s%s%s  %sua=%s%s  %sctx=%s%s%n",
+                        color, icon, method, ANSI_WHITE, pathDisplay, color,
+                        ANSI_DIM, uaShort, color,
+                        getContextColor(name), name, ANSI_RESET);
             }
             try {
                 delegate.handle(exchange);
@@ -184,8 +201,60 @@ public class RestServer {
                 if (debugEnabled) {
                     long end = System.nanoTime();
                     long ms = (end - start) / 1_000_000L;
-                    System.out.printf("[HTTP ◄] handled in %dms  ctx=%s%n", ms, name);
+                    String responseInfo = getResponseInfo(exchange);
+                    String color = ms > 1000 ? ANSI_RED : ms > 500 ? ANSI_YELLOW : ANSI_GREEN;
+                    System.out.printf("%s[HTTP ✅] %s %dms%s  %sctx=%s%s%n", 
+                            color, responseInfo, ms, color,
+                            getContextColor(name), name, ANSI_RESET);
                 }
+            }
+        }
+        
+        private String getRequestIcon(String path, String method) {
+            if (path.startsWith("/api/")) {
+                if (path.contains("animais")) return "🐾";
+                if (path.contains("chat")) return "💬";
+                if (path.contains("auth")) return "🔐";
+                if (path.contains("adotante")) return "👤";
+                if (path.contains("voluntario")) return "🤝";
+                if (path.contains("ong")) return "🏢";
+                if (path.contains("interesse")) return "❤️";
+                return "📡";
+            }
+            if (path.endsWith(".html")) return "📄";
+            if (path.endsWith(".css")) return "🎨";
+            if (path.endsWith(".js")) return "⚙️";
+            if (path.contains("img/") || path.endsWith(".png") || path.endsWith(".jpg")) return "🖼️";
+            return "📊";
+        }
+        
+        private String getRequestColor(String path, String method) {
+            if (path.startsWith("/api/")) return ANSI_BLUE;
+            if (path.endsWith(".html")) return ANSI_CYAN;
+            if (path.endsWith(".css")) return ANSI_PURPLE;
+            if (path.endsWith(".js")) return ANSI_YELLOW;
+            return ANSI_WHITE;
+        }
+        
+        private String getContextColor(String context) {
+            if (context.equals("static")) return ANSI_GREEN;
+            if (context.startsWith("/api/")) return ANSI_PURPLE;
+            return ANSI_CYAN;
+        }
+        
+        private String getResponseInfo(HttpExchange exchange) {
+            try {
+                int responseCode = exchange.getResponseCode();
+                long responseLength = exchange.getResponseHeaders().getFirst("Content-Length") != null 
+                    ? Long.parseLong(exchange.getResponseHeaders().getFirst("Content-Length")) : 0;
+                
+                if (responseLength > 0) {
+                    return String.format("%d (%d bytes)", responseCode, responseLength);
+                } else {
+                    return String.valueOf(responseCode);
+                }
+            } catch (Exception e) {
+                return "?";
             }
         }
     }

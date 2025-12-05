@@ -455,10 +455,14 @@ public class Interface {
         System.out.println(ANSI_BOLD + ANSI_CYAN + "            🐾 PetMatch - Login 🐾           " + ANSI_RESET);
         System.out.println(ANSI_BOLD + ANSI_CYAN + "══════════════════════════════════════════════" + ANSI_RESET);
         System.out.println(ANSI_YELLOW + "Dica: Admin = (admin / admin). Demais: use CPF e senha cadastrados." + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "🚀 Digite 'server' para iniciar o servidor REST (Frontend Web)" + ANSI_RESET);
         mostrarLoginsDisponiveis(adotanteDao, voluntarioDao);
         System.out.print("Usuário: ");
         String usuario = sc.nextLine().trim();
         if (usuario.equals("0")) return null;
+        if (usuario.equalsIgnoreCase("server")) {
+            return iniciarServidor(sc);
+        }
         System.out.print("Senha: ");
         String senha = sc.nextLine().trim();
 
@@ -2156,6 +2160,351 @@ public class Interface {
         System.out.println(ANSI_RED + "\n✗ Restauração CANCELADA - descompressão não implementada!" + ANSI_RESET);
     }
 
+    // ================================
+    // INICIAR SERVIDOR REST
+    // ================================
+    
+    private static UsuarioLogado iniciarServidor(Scanner sc) {
+        showInfo("🚀 Iniciando servidor REST...");
+        
+        System.out.println("\n" + ANSI_YELLOW + "Escolha o método de inicialização:" + ANSI_RESET);
+        System.out.println("1) " + ANSI_GREEN + "Diretamente (mesma JVM)" + ANSI_RESET);
+        System.out.println("2) " + ANSI_BLUE + "Processo separado" + ANSI_RESET);
+        System.out.println("0) " + ANSI_RED + "Cancelar" + ANSI_RESET);
+        System.out.print("\n→ Opção: ");
+        
+        String opcao = sc.nextLine().trim();
+        
+        switch (opcao) {
+            case "1":
+                return iniciarServidorDiretamenteComOpcoes(sc);
+            case "2":
+                iniciarServidorProcessoSeparado();
+                return null;
+            case "0":
+                showInfo("Operação cancelada.");
+                return null;
+            default:
+                showWarning("Opção inválida. Tentando método direto...");
+                return iniciarServidorDiretamenteComOpcoes(sc);
+        }
+    }
+    
+    private static UsuarioLogado iniciarServidorDiretamenteComOpcoes(Scanner sc) {
+        showInfo("🔧 Executando InterfaceWithServer diretamente...");
+        try {
+            // Executar o main do InterfaceWithServer diretamente
+            String[] args = {};
+            Thread serverThread = new Thread(() -> {
+                try {
+                    InterfaceWithServer.main(args);
+                } catch (Exception e) {
+                    showError("Erro no servidor: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            
+            serverThread.setDaemon(false); // Não é daemon para não terminar quando main() acaba
+            serverThread.start();
+            
+            showSuccess("Servidor iniciado em thread separada!");
+            showInfo("🌐 Frontend: http://localhost:8080/pages/index.html");
+            showInfo("📡 API REST: http://localhost:8080/api");
+            showWarning("Aguardando 3 segundos para inicialização...");
+            
+            Thread.sleep(3000); // Aguardar inicialização
+            
+            showSuccess("Servidor deve estar funcionando agora!");
+            
+            // Dar opções ao usuário
+            System.out.println("\n" + ANSI_YELLOW + "O que deseja fazer agora?" + ANSI_RESET);
+            System.out.println("1) " + ANSI_GREEN + "Continuar usando o CLI (recomendado)" + ANSI_RESET);
+            System.out.println("2) " + ANSI_BLUE + "Menu de gerenciamento do servidor" + ANSI_RESET);
+            System.out.println("3) " + ANSI_RED + "Apenas deixar o servidor rodando (encerrar CLI)" + ANSI_RESET);
+            System.out.print("\n→ Opção: ");
+            
+            String escolha = sc.nextLine().trim();
+            
+            if ("2".equals(escolha)) {
+                menuGerenciamentoServidor(sc, serverThread);
+                return null;
+            } else if ("3".equals(escolha)) {
+                showInfo("🔄 Servidor continuará rodando em segundo plano.");
+                showInfo("🛑 Para encerrar, pressione CTRL+C no terminal ou feche a aplicação.");
+                showInfo("✨ Aguardando indefinidamente... Use o frontend web!");
+                
+                // Manter o programa rodando indefinidamente
+                try {
+                    serverThread.join(); // Aguarda a thread do servidor terminar (nunca vai acontecer normalmente)
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return null;
+            } else {
+                showInfo("✅ Continuando com CLI. Servidor rodando em paralelo.");
+                return null; // Retorna ao login para continuar normalmente
+            }
+            
+        } catch (Exception e) {
+            showError("Erro ao iniciar servidor diretamente: " + e.getMessage());
+            showWarning("Tentando método alternativo...");
+            iniciarServidorProcessoSeparado();
+            return null;
+        }
+    }
+    
+    private static void menuGerenciamentoServidor(Scanner sc, Thread serverThread) {
+        while (true) {
+            System.out.println("\n" + ANSI_BOLD + ANSI_PURPLE + "🖥️  Menu de Gerenciamento do Servidor" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "═════════════════════════════════════════════" + ANSI_RESET);
+            System.out.println("📊 Status: " + ANSI_GREEN + "Servidor ONLINE" + ANSI_RESET);
+            System.out.println("🌐 Frontend: " + ANSI_WHITE + "http://localhost:8080/pages/index.html" + ANSI_RESET);
+            System.out.println("🔌 API REST: " + ANSI_WHITE + "http://localhost:8080/api" + ANSI_RESET);
+            System.out.println();
+            System.out.println("1) " + ANSI_YELLOW + "🔄 Reconstruir índices B+" + ANSI_RESET);
+            System.out.println("2) " + ANSI_BLUE + "💾 Fazer backup dos dados" + ANSI_RESET);
+            System.out.println("3) " + ANSI_PURPLE + "🗜️  Compactar arquivos (Vacuum)" + ANSI_RESET);
+            System.out.println("4) " + ANSI_GREEN + "📊 Ver estatísticas da base de dados" + ANSI_RESET);
+            System.out.println("5) " + ANSI_CYAN + "🔐 Verificar criptografia RSA" + ANSI_RESET);
+            System.out.println("6) " + ANSI_WHITE + "📄 Ver logs coloridos do servidor" + ANSI_RESET);
+            System.out.println("7) " + ANSI_BLUE + "🖱️  Abrir frontend no navegador" + ANSI_RESET);
+            System.out.println("8) " + ANSI_GREEN + "➡️  Voltar ao CLI normal" + ANSI_RESET);
+            System.out.println("9) " + ANSI_YELLOW + "💤 Deixar servidor rodando (sair)" + ANSI_RESET);
+            System.out.println(ANSI_RED + "0) " + "❌ Parar servidor e sair" + ANSI_RESET);
+            System.out.print("\n→ Opção: ");
+            
+            String opcao = sc.nextLine().trim();
+            
+            try {
+                switch (opcao) {
+                    case "1" -> reconstruirIndicesServidor(sc);
+                    case "2" -> fazerBackupServidor(sc);
+                    case "3" -> compactarArquivosServidor(sc);
+                    case "4" -> mostrarEstatisticasServidor();
+                    case "5" -> verificarCriptografiaServidor(sc);
+                    case "6" -> mostrarLogsServidor();
+                    case "7" -> abrirFrontendNavegador();
+                    case "8" -> {
+                        showInfo("✅ Voltando ao CLI. Servidor continua rodando.");
+                        return;
+                    }
+                    case "9" -> {
+                        showInfo("💤 Deixando servidor rodando. Use o frontend web!");
+                        showInfo("🛑 Para encerrar, pressione CTRL+C no terminal.");
+                        try {
+                            serverThread.join();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        return;
+                    }
+                    case "0" -> {
+                        showWarning("❌ Parando servidor...");
+                        System.exit(0); // Para tudo, incluindo o servidor
+                    }
+                    default -> showError("Opção inválida. Tente novamente.");
+                }
+            } catch (Exception e) {
+                showError("Erro: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    private static void iniciarServidorProcessoSeparado() {
+        showInfo("🔄 Executando InterfaceWithServer em processo separado...");
+        try {
+            // Detectar se estamos no diretório correto
+            File currentDir = new File(System.getProperty("user.dir"));
+            File targetClasses = new File(currentDir, "target/classes");
+            File codigoDir = new File(currentDir, "Codigo");
+            
+            ProcessBuilder pb;
+            
+            if (targetClasses.exists()) {
+                // Estamos na pasta Codigo ou target/classes existe aqui
+                pb = new ProcessBuilder(
+                    "java", 
+                    "-cp", 
+                    "target/classes", 
+                    "br.com.mpet.InterfaceWithServer"
+                );
+                pb.directory(currentDir);
+            } else if (codigoDir.exists()) {
+                // Estamos na raiz do repositório
+                pb = new ProcessBuilder(
+                    "java", 
+                    "-cp", 
+                    "Codigo/target/classes", 
+                    "br.com.mpet.InterfaceWithServer"
+                );
+                pb.directory(currentDir);
+            } else {
+                // Tentar da pasta Codigo
+                File parentDir = currentDir.getParentFile();
+                if (parentDir != null && new File(parentDir, "Codigo").exists()) {
+                    pb = new ProcessBuilder(
+                        "java", 
+                        "-cp", 
+                        "Codigo/target/classes", 
+                        "br.com.mpet.InterfaceWithServer"
+                    );
+                    pb.directory(parentDir);
+                } else {
+                    throw new IOException("Não foi possível encontrar o diretório target/classes");
+                }
+            }
+            
+            pb.inheritIO(); // Para mostrar a saída do servidor no console atual
+            
+            showSuccess("Servidor REST será iniciado em processo separado.");
+            showInfo("🌐 Após inicialização, acesse: http://localhost:8080/pages/index.html");
+            showInfo("📡 API REST disponível em: http://localhost:8080/api");
+            
+            Process processo = pb.start();
+            
+            showWarning("Pressione CTRL+C para interromper o servidor quando necessário.");
+            
+            // Aguardar um pouco para o servidor inicializar
+            Thread.sleep(2000);
+            
+            showSuccess("Processo iniciado! PID: " + processo.pid());
+            
+        } catch (Exception e) {
+            showError("Erro ao iniciar servidor em processo separado: " + e.getMessage());
+            showWarning("Comandos para tentar manualmente:");
+            showWarning("  cd Codigo && java -cp target/classes br.com.mpet.InterfaceWithServer");
+            showWarning("  ou:");
+            showWarning("  java -cp Codigo/target/classes br.com.mpet.InterfaceWithServer");
+        }
+    }
+    
+    
+    // ================================
+    // MÉTODOS DE GERENCIAMENTO DO SERVIDOR
+    // ================================
+    
+    private static void reconstruirIndicesServidor(Scanner sc) throws Exception {
+        showInfo("🔄 Reconstruindo índices B+ Tree...");
+        try (
+            AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
+            OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
+            AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO);
+            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO);
+            InteresseDataFileDao interesseDao = new InteresseDataFileDao(INTERESSES_DATA_FILE, VERSAO);
+            ChatThreadDataFileDao chatThreadDao = new ChatThreadDataFileDao(CHAT_THREADS_DATA_FILE, VERSAO);
+            ChatMessageDataFileDao chatMsgDao = new ChatMessageDataFileDao(CHAT_MSGS_DATA_FILE, VERSAO)
+        ) {
+            // Os índices são reconstruídos automaticamente na inicialização dos DAOs
+            showSuccess("✅ Índices reconstruídos com sucesso!");
+            pressEnterToContinue(sc);
+        }
+    }
+    
+    private static void fazerBackupServidor(Scanner sc) throws Exception {
+        showInfo("💾 Criando backup...");
+        backupZipSimples();
+        showSuccess("✅ Backup criado com sucesso!");
+        pressEnterToContinue(sc);
+    }
+    
+    private static void compactarArquivosServidor(Scanner sc) throws Exception {
+        showInfo("🗜️  Compactando arquivos (Vacuum)...");
+        try (
+            AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
+            OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
+            AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO);
+            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO);
+            InteresseDataFileDao interesseDao = new InteresseDataFileDao(INTERESSES_DATA_FILE, VERSAO);
+            ChatThreadDataFileDao chatThreadDao = new ChatThreadDataFileDao(CHAT_THREADS_DATA_FILE, VERSAO);
+            ChatMessageDataFileDao chatMsgDao = new ChatMessageDataFileDao(CHAT_MSGS_DATA_FILE, VERSAO)
+        ) {
+            animalDao.vacuum();
+            ongDao.vacuum();
+            adotanteDao.vacuum();
+            voluntarioDao.vacuum();
+            adocaoDao.vacuum();
+            interesseDao.vacuum();
+            chatThreadDao.vacuum();
+            chatMsgDao.vacuum();
+            showSuccess("✅ Compactação concluída com sucesso!");
+        }
+        pressEnterToContinue(sc);
+    }
+    
+    private static void mostrarEstatisticasServidor() throws Exception {
+        showInfo("📊 Coletando estatísticas da base de dados...");
+        try (
+            AnimalDataFileDao animalDao = new AnimalDataFileDao(ANIMAIS_DATA_FILE, VERSAO);
+            OngDataFileDao ongDao = new OngDataFileDao(ONGS_DATA_FILE, VERSAO);
+            AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO);
+            AdocaoDataFileDao adocaoDao = new AdocaoDataFileDao(ADOCOES_DATA_FILE, VERSAO);
+            InteresseDataFileDao interesseDao = new InteresseDataFileDao(INTERESSES_DATA_FILE, VERSAO);
+            ChatThreadDataFileDao chatThreadDao = new ChatThreadDataFileDao(CHAT_THREADS_DATA_FILE, VERSAO);
+            ChatMessageDataFileDao chatMsgDao = new ChatMessageDataFileDao(CHAT_MSGS_DATA_FILE, VERSAO)
+        ) {
+            System.out.println("\n" + ANSI_BOLD + ANSI_CYAN + "📊 Estatísticas da Base de Dados" + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════" + ANSI_RESET);
+            System.out.println("🐾 Animais ativos: " + ANSI_WHITE + animalDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("🏢 ONGs ativas: " + ANSI_WHITE + ongDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("👥 Adotantes ativos: " + ANSI_WHITE + adotanteDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("🤝 Voluntários ativos: " + ANSI_WHITE + voluntarioDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("💖 Adoções realizadas: " + ANSI_WHITE + adocaoDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("❤️ Interesses registrados: " + ANSI_WHITE + interesseDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("💬 Conversas ativas: " + ANSI_WHITE + chatThreadDao.listAllActive().size() + ANSI_RESET);
+            System.out.println("📨 Mensagens trocadas: " + ANSI_WHITE + chatMsgDao.listAllActive().size() + ANSI_RESET);
+            System.out.println(ANSI_CYAN + "═══════════════════════════════════════" + ANSI_RESET);
+        }
+    }
+    
+    private static void verificarCriptografiaServidor(Scanner sc) throws Exception {
+        showInfo("🔐 Verificando criptografia RSA...");
+        try (
+            AdotanteDataFileDao adotanteDao = new AdotanteDataFileDao(ADOTANTES_DATA_FILE, VERSAO);
+            VoluntarioDataFileDao voluntarioDao = new VoluntarioDataFileDao(VOLUNTARIOS_DATA_FILE, VERSAO)
+        ) {
+            verificarCriptografiaSenhas(sc, adotanteDao, voluntarioDao);
+        }
+    }
+    
+    private static void mostrarLogsServidor() {
+        System.out.println("\n" + ANSI_BOLD + ANSI_GREEN + "📄 Logs do Servidor REST" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "═════════════════════════════════════════" + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "⚠️  Os logs aparecem em tempo real no console principal." + ANSI_RESET);
+        System.out.println("Para ver logs coloridos e organizados, monitore o terminal onde o servidor está rodando.");
+        System.out.println();
+        System.out.println("Exemplo de logs que você verá:");
+        System.out.println(ANSI_CYAN + "[HTTP 📊] GET /pages/index.html" + ANSI_RESET + ANSI_DIM + "  ua=Mozilla/5.0..." + ANSI_RESET + ANSI_GREEN + "  ctx=static" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "[HTTP ✅] handled in 23ms" + ANSI_RESET + ANSI_GREEN + "  ctx=static" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "[HTTP 🐾] GET /api/animais" + ANSI_RESET + ANSI_DIM + "  ua=Mozilla/5.0..." + ANSI_RESET + ANSI_PURPLE + "  ctx=/api/animais" + ANSI_RESET);
+        System.out.println(ANSI_PURPLE + "[HTTP 📡] GET /api/animais -> 200 (29670 bytes) 27ms" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "═════════════════════════════════════════" + ANSI_RESET);
+    }
+    
+    private static void abrirFrontendNavegador() {
+        showInfo("🖱️  Tentando abrir frontend no navegador...");
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            String url = "http://localhost:8080/pages/index.html";
+            
+            if (os.contains("win")) {
+                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
+            } else if (os.contains("mac")) {
+                Runtime.getRuntime().exec("open " + url);
+            } else if (os.contains("nix") || os.contains("nux")) {
+                Runtime.getRuntime().exec("xdg-open " + url);
+            }
+            
+            showSuccess("✅ Frontend aberto no navegador padrão!");
+        } catch (Exception e) {
+            showError("❌ Não foi possível abrir automaticamente.");
+            showInfo("💡 Acesse manualmente: http://localhost:8080/pages/index.html");
+        }
+    }
+    
     // ================================
     // FUNÇÕES DE APOIO: DISPONIBILIDADE E INTERAÇÕES
     // ================================
